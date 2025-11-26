@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Connexion{% endblock %}
+
+{% block content %}
+
+<div class="welcome-login-wrapper">
+  <!-- Bienvenue -->
+  <div class="welcome-section">
+    <h1>{% trans "Bienvenue sur l'espace connexion" %}</h1>
+    <p>{% trans "Connectez-vous pour accéder à votre espace personnel et gérer vos réservations." %}</p>
+  </div>
+
+  <!-- Formulaire Connexion -->
+  <div class="login-container">
+    <div class="card shadow-lg rounded-4 border-0">
+      <div class="card-body p-5">
+        <h2 class="text-center mb-4 fw-bold">{% trans "Connexion" %}</h2>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} text-center mb-3">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="POST" novalidate>
+     <form method="post" action="{% url 'login' %}">
+    {% csrf_token %}
+
+    <div class="mb-3">
+        <label for="username" class="form-label fw-semibold">{% trans "Nom d'utilisateur" %}</label>
+        <input type="text" name="username" class="form-control" id="username" required placeholder="Entrez votre nom">
+    </div>
+
+    
+</div>
