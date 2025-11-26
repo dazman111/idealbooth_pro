@@ -1,10 +1,53 @@
 {% extends 'base.html' %}
-
+{% load static %}
 
 {% block title %}Accueil - IdealBooth{% endblock %}
 
 {% block content %}
 
 
+<!-- CONTENU PRINCIPAL -->
+<div class="container mt-5">
 
+    <!-- HERO -->
+    <div class="hero-section">
+        <!-- Formes animées -->
+        <div class="wave wave1"></div>
+        <div class="wave wave2"></div>
+        <div class="wave wave3"></div>
+
+        <h1>{% trans "Bienvenue sur" %} <span style="color: #B08824;">IdealBooth</span></h1>
+        <p class="lead">
+            {% trans "Louez facilement nos photobooths modernes pour vos" %}
+            <strong>{% trans "mariages" %}</strong>, <strong>{% trans "fêtes" %}</strong>,
+            <strong>{% trans "séminaires" %}</strong> {% trans "et plus encore." %}
+        </p>
+        <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
+            <a href="{% url 'photobooth_list' %}" class="btn btn-primary shadow-sm">{% trans "Voir nos Photobooths" %}</a>
+            <a href="{% url 'blog_home' %}" class="btn btn-outline-secondary shadow-sm">{% trans "Lire le Blog" %}</a>
+        </div>
+    </div>
+
+    <!-- CAROUSEL -->
+    <div id="carouselExampleFade" class="carousel slide carousel-fade" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="{% static 'images/cre.jpg' %}" class="d-block w-100" alt="Photobooth 1">
+            </div>
+            <div class="carousel-item">
+                <img src="{% static 'images/anniversaire.jpg' %}" class="d-block w-100" alt="Photobooth 2">
+            </div>
+            <div class="carousel-item">
+                <img src="{% static 'images/evenement.jpg' %}" class="d-block w-100" alt="Photobooth 3">
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+
+</div>
 {% endblock %}
