@@ -204,6 +204,86 @@
 </head>
 <body>
 
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light shadow-sm">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+            <img src="{% static 'images/logo11.png' %}" alt="logo" class="me-2">
+            <span>IdealBooth</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" href="/">{% trans "Accueil" %}</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'photobooth_list' %}">{% trans "Photobooths" %}</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'blog_home' %}">{% trans "Blog" %}</a></li>
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <!-- tes liens Accueil, Photobooths, Blog... -->
+
+                    {% if user.is_authenticated %}
+                        {% if user.is_staff or user.is_superuser %}
+                            <li class="nav-item">
+                                <a href="{% url 'admin_dashboard' %}" class="btn btn-sm btn-outline-danger ms-2">Admin</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-danger" href="{% url 'logout' %}">Déconnexion</a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'user_dashboard' %}">Compte</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'user_messages' %}">
+                                    Messages
+                                    {% if unread_messages_count > 0 %}
+                                        <span class="badge bg-danger rounded-circle">{{ unread_messages_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-danger" href="{% url 'logout' %}">Déconnexion</a>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Connexion</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Inscription</a></li>
+                    {% endif %}
+
+                    <!-- Choix de langue -->
+                    <li class="nav-item ms-3">
+                        <form action="/i18n/setlang/" method="post" class="d-flex align-items-center">
+                            {% csrf_token %}
+                            {% get_current_language as LANGUAGE_CODE %}
+                            {% get_available_languages as LANGUAGES %}
+                            <select name="language" onchange="this.form.submit()" class="form-select form-select-sm">
+                                {% for lang_code, lang_name in LANGUAGES %}
+                                    <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>
+                                        {{ lang_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                   </li>
+              </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Messages -->
+<div class="container mt-3">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
 
 
 </body>
