@@ -4,8 +4,207 @@
     <meta charset="UTF-8">
     <title>{% block title %}{% trans "IdealBooth" %}{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+      <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap & Icons -->
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"rel="stylesheet"crossorigin="anonymous"referrerpolicy="no-referrer" />
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"rel="stylesheet"crossorigin="anonymous"referrerpolicy="no-referrer" />
+   <link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"crossorigin="anonymous"referrerpolicy="no-referrer" />
+   <link rel="icon"href="{% static 'images/favicon.ico' %}"type="image/x-icon" />
+   <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+   <link rel="icon" type="image/png" sizes="32x32" href="/static/images/favicon-32x32.png">
+   <link rel="icon" type="image/png" sizes="16x16" href="/static/images/favicon-16x16.png">
+   <link rel="shortcut icon" href="/static/images/favicon.ico" type="image/x-icon">
+   <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png">
+   <link rel="manifest" href="/static/images/site.webmanifest">
+
+   <style>
+    :root {
+        --primary-color: #5B6E9D; /* bleu principal */
+        --secondary-color: #B08824; /* doré */
+        --text-dark: #000000; /* noir */
+        --bg-light: #f8f9fa;
+    }
+
+    body {
+        font-family: 'Poppins', 'Inter', sans-serif;
+        background-color: var(--bg-light);
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        scroll-behavior: smooth;
+    }
+
+    /* === Navbar === */
+    .navbar {
+    background-color: rgba(91, 110, 157, 0.65); /* bleu principal avec opacité 85% */
+    border-bottom: 2px solid var(--secondary-color);
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    backdrop-filter: blur(8px); /* léger flou derrière la navbar pour améliorer la lisibilité */
+}
+
+    .navbar-brand img {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        filter: brightness(1.2) contrast(1.3) drop-shadow(0 0 6px rgba(0,0,0,0.5));
+        transition: transform 0.3s ease, filter 0.3s ease;
+    }
+
+    .navbar-brand img:hover {
+        transform: scale(1.1);
+        filter: brightness(1.4) contrast(1.6) drop-shadow(0 0 12px rgba(0,0,0,0.7));
+    }
+
+    .navbar-brand span {
+        color: var(--secondary-color);
+        font-weight: 700;
+        font-size: 1.7rem;
+    }
+
+    .nav-link {
+        font-weight: 600;
+        color: #ffffff !important;
+        transition: color 0.3s ease;
+    }
+
+    .nav-link:hover {
+        color: var(--secondary-color) !important;
+    }
+
+    .cart-icon {
+        position: relative;
+        margin-left: 10px;
+    }
+
+    .cart-icon i {
+        font-size: 22px;
+    }
+
+    .cart-badge {
+        position: absolute;
+        top: -4px;
+        right: -10px;
+        background: var(--secondary-color);
+        color: #fff;
+        border-radius: 50%;
+        font-size: 12px;
+        padding: 2px 6px;
+    }
+
+    /* === Footer (inchangé) === */
+    footer {
+        background-color: #212529;
+        color: #f8f9fa;
+        padding: 40px 0;
+        font-size: 14px;
+    }
+
+    footer a {
+        color: #adb5bd;
+        margin: 0 8px;
+        text-decoration: none;
+    }
+
+    footer a:hover {
+        color: white;
+    }
+
+    .social-icons a {
+        color: #adb5bd; /* gris clair */
+        margin: 0 10px;
+        font-size: 20px;
+        transition: color 0.3s ease, transform 0.3s ease;
+        display: inline-block;
+    }
+
+    .social-icons a:hover {
+        color: var(--secondary-color);
+        transform: scale(1.2);
+    }
+
+    /* === Alerts / Promo Banner === */
+    .alert {
+        position: relative;
+        padding: 1rem 1.5rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #fff !important;
+        background: linear-gradient(90deg, #5B6E9D, #B08824); /* bleu -> doré */
+        border: none;
+        border-radius: 0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        text-shadow: 0 1px 4px rgba(0,0,0,0.25);
+        user-select: none;
+        z-index: 1050 !important;
+    }
+
+    .alert > *:first-child {
+        flex-grow: 1;
+    }
+
+    .alert button.btn-dark {
+        background: #fff;
+        color: #B08824;
+        font-weight: 700;
+        border-radius: 30px;
+        padding: 0.3rem 0.9rem;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        transition: background-color 0.3s ease, color 0.3s ease;
+        border: none;
+        user-select: text;
+    }
+
+    .alert button.btn-dark:hover {
+        background: var(--secondary-color);
+        color: #fff;
+        cursor: pointer;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
+
+    .alert .close {
+        position: relative;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 1.5rem;
+        font-weight: 900;
+        line-height: 1;
+        opacity: 0.8;
+        transition: opacity 0.2s ease;
+        cursor: pointer;
+        padding: 0 8px 0 12px;
+        user-select: none;
+    }
+
+    .alert .close:hover {
+        opacity: 1;
+    }
+
+    @media (max-width: 576px) {
+        .alert {
+            font-size: 1rem;
+            padding: 0.8rem 1rem;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .alert button.btn-dark {
+            padding: 0.25rem 0.7rem;
+            font-size: 0.9rem;
+        }
+    }
+</style>
 </head>
 <body>
+
+
 
 </body>
 </html>
