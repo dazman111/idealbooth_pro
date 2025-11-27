@@ -3,7 +3,6 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
-from django.contrib.auth.models import User
 
 class CustomUser(AbstractUser):
     phone_number = models.CharField(max_length=20, blank=True, null=True)
