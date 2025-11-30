@@ -1,5 +1,4 @@
 from django.contrib import admin
-from reservations.models import Reservation, Invoice
 
 
 # --- Gestion des factures ---
