@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ photobooth.name }}{% endblock %}
+
+{% block content %}
+
+<div class="card mx-auto mt-5 shadow-lg rounded-4" style="max-width: 700px;">
+    <img src="{{ photobooth.image.url }}" class="card-img-top rounded-top-4" alt="{{ photobooth.name }}">
+    <div class="card-body">
+
+        <!-- Messages favoris -->
+        {% if favorite_added %}
+            <div class="p-3 mb-3 rounded text-green-800 bg-green-100 border border-green-300">
+                ❤️ Photobooth ajouté aux favoris !
+            </div>
+        {% endif %}
+
+        {% if favorite_removed %}
+            <div class="p-3 mb-3 rounded text-red-800 bg-red-100 border border-red-300">
+                💔 Photobooth retiré des favoris.
+            </div>
+        {% endif %}
+
+        <h3 class="card-title">{{ photobooth.name }}</h3>
+        <p class="card-text">{{ photobooth.description }}</p>
+
+        <p class="card-text font-bold text-lg">{{ photobooth.price_per_day }} € / jour</p>
+        <p>Stock disponible : {{ photobooth.available }}</p>
+
+        {% if user.is_authenticated %}
+           {% if photobooth.available > 0 %}
+                <form id="add-to-cart-form" method="post" action="{% url 'add_to_cart' photobooth.id %}" class="flex items-center gap-3">
+                    {% csrf_token %}
+
+                    <div>
+                        <label for="start_date">📅 Date de début :</label>
+                        <input type="date" name="start_date" id="start_date" class="form-control" required>
+                    </div>
+
+                    <div>
+                        <label for="end_date">📅 Date de fin :</label>
+                        <input type="date" name="end_date" id="end_date" class="form-control" required>
+                    </div>
+
+                    <div>
+                        <label for="quantity">Quantité :</label>
+                        <input type="number" id="quantity" name="quantite" value="1" min="1" max="{{ photobooth.available }}"
+                            class="border rounded px-2 py-1" required>
+                        <small id="quantity-warning" class="text-red-500 hidden">
+                            Quantité maximale atteinte ({{ photobooth.available }}).
+                        </small>
+                    </div>
+
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                        Ajouter au panier
+                    </button>
+
+                    <!-- Badge pour afficher le nombre d'articles -->
+                    <span id="cart-badge" class="ml-3 font-bold">{{ cart_count }}</span>
+                </form>
+            {% else %}
+                <p class="text-red-500">Ce photobooth est indisponible.</p>
+            {% endif %}
+
+
+            <!-- Bouton Favori -->
+            <div class="mt-4">
+                {% if is_favorite %}
+                    <a href="{% url 'remove_favorite' photobooth.pk %}"
+                       class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-green-600 bg-green-100 text-green-700 hover:bg-green-200 transition">
+                        ❤️ Retirer des favoris
+                    </a>
+                {% else %}
+                    <a href="{% url 'add_favorite' photobooth.pk %}"
+                       class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-gray-400 text-gray-700 hover:border-green-600 hover:bg-green-100 transition">
+                        🤍 Ajouter aux favoris
+                    </a>
+                {% endif %}
+            </div>
+
+        {% else %}
+            <a href="{% url 'login' %}" class="btn btn-warning btn-lg w-100 rounded-pill mt-3">
+                Connectez-vous pour réserver
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+{% endblock %}
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('#add-to-cart-form');
+    if (!form) return;
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault(); // empêche le comportement normal du formulaire
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new FormData(form)
+        })
+        .then(res => {
+            if(res.ok) {
+                // mettre à jour le badge ou afficher un toast ici
+                console.log('Article ajouté au panier !');
+            }
+        });
+    });
+});
+</script>
+
+
