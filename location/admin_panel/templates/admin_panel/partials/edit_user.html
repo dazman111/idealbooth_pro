@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier l'utilisateur{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card shadow rounded-4 border-0">
+                <div class="card-header bg-primary text-white rounded-top-4">
+                    <h3 class="mb-0">Modifier l'utilisateur</h3>
+                </div>
+                <div class="card-body">
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} mb-3">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label fw-semibold">Nom d'utilisateur</label>
+                            <input type="text" class="form-control" id="username" name="username" value="{{ edited_user.username }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-semibold">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ edited_user.email }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="first_name" class="form-label fw-semibold">Prénom</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ edited_user.first_name }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="last_name" class="form-label fw-semibold">Nom</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ edited_user.last_name }}">
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-save"></i> Enregistrer
+                            </button>
+                            <!-- Retour au dashboard admin -->
+                            <a href="{% url 'manage_users' %}" class="btn btn-secondary">
+                                ⬅ Retour au dashboard
+                            </a>
+                        </div>
+                    </form>
+
+                    {% if success %}
+                        <div class="alert alert-success mt-3">
+                            Utilisateur mis à jour avec succès !
+                        </div>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
