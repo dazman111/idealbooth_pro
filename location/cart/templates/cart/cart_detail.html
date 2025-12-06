@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+
+/* Structure principale */
+.cart-container {
+  max-width: 1100px;
+  margin: 30px auto;
+  background: #fff;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+/* Titre */
+.cart-container h2 {
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #B08824; /* Doré */
+  padding-bottom: 10px;
+  color: #5B6E9D; /* Bleu */
+}
+
+/* Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 25px;
+}
+
+thead th {
+  padding: 12px;
+  background-color: #5B6E9D; /* Bleu */
+  text-align: left;
+  font-weight: 600;
+  color: #fff;
+}
+
+tbody td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+/* Image */
+img.product-image {
+  width: 60px;
+  height: auto;
+  border-radius: 6px;
+}
+
+/* Formulaires */
+input[type="date"],
+input[type="number"],
+select {
+  padding: 6px 8px;
+  font-size: 0.9rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+}
+
+input[type="number"] {
+  width: 60px;
+}
+
+button[type="submit"] {
+  background: none;
+  border: none;
+  color: #5B6E9D; /* Bleu */
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+button[type="submit"]:hover {
+  color: #B08824; /* Doré */
+}
+
+a.remove-item {
+  color: #B08824; /* Doré */
+  font-size: 1rem;
+  text-decoration: none;
+}
+
+a.remove-item:hover {
+  color: #5B6E9D; /* Bleu */
+}
+
+/* Coupon */
+.apply-coupon-form {
+  display: flex;
+  gap: 0;
+  max-width: 320px;
+  margin-top: 10px;
+}
+
+.apply-coupon-form input[type="text"] {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px 0 0 6px;
+  border: 1px solid #ccc;
+  border-right: none;
+}
+
+.apply-coupon-form button {
+  background-color: #B08824; /* Doré */
+  color: white;
+  padding: 8px 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.apply-coupon-form button:hover {
+  background-color: #5B6E9D; /* Bleu */
+}
+
+/* Total & paiement */
+.cart-summary {
+  text-align: right;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.cart-summary small {
+  display: block;
+  font-weight: 400;
+  color: #B08824; /* Doré */
+  margin-top: 5px;
+}
+
+/* Boutons paiement */
+.btn-checkout {
+  display: inline-block;
+  background-color: #5B6E9D; /* Bleu */
+  color: white;
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.3s ease;
+  margin-top: 20px;
+}
+
+.btn-checkout:hover {
+  background-color: #B08824; /* Doré */
+}
+
+/* Bouton confirmer réservation */
+.btn-confirm {
+  display: inline-block;
+  background-color: #B08824; /* Doré */
+  color: white;
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.3s ease;
+}
+
+.btn-confirm:hover {
+  background-color: #5B6E9D; /* Bleu */
+}
+
+/* Masquer le bouton passer au paiement */
+#checkout-button {
+  display: none !important;
+}
+
+/* Message vide */
+.empty-message {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #555;
+  padding: 40px 0;
+}
+
+/* Résumé sticky sur mobile */
+@media (max-width: 768px) {
+  .cart-summary {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    padding: 15px;
+    border-top: 2px solid #B08824; /* Doré */
+    box-shadow: 0 -1px 5px rgba(0,0,0,0.05);
+    z-index: 100;
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .btn-checkout {
+    display: block;
+    margin: 10px auto 0 auto;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .btn-confirm {
+    display: block;
+    margin: 10px auto;
+    width: 100%;
+    max-width: 400px;
+  }
+}
+
+</style>
+
+<div class="cart-container">
+
+  <h2>{% trans "Votre panier" %}</h2>
+
+  {% if cart.items.exists %}
+
+  <table>
+    <thead>
+      <tr>
+        <th>{% trans "Image" %}</th>
+        <th>{% trans "Photobooth" %}</th>
+        <th>{% trans "Début" %}</th>
+        <th>{% trans "Fin" %}</th>
+        <th>{% trans "Événement" %}</th>
+        <th>{% trans "Qté" %}</th>
+        <th>{% trans "Prix/jour" %}</th>
+        <th>{% trans "Durée" %}</th>
+        <th>{% trans "Total" %}</th>
+        <th>{% trans "Actions" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in cart.items.all %}
+      <tr>
+        <form method="POST" action="{% url 'update_cart_item' item.id %}">
+          {% csrf_token %}
+          <td><img src="{{ item.photobooth.image.url }}" class="product-image" alt="{{ item.photobooth.name }}"></td>
+          <td>{{ item.photobooth.name }}</td>
+          <td><input type="date" name="start_date" value="{{ item.start_date|date:'Y-m-d' }}" required class="start_date"></td>
+          <td><input type="date" name="end_date" value="{{ item.end_date|date:'Y-m-d' }}" required class="end_date"></td>
+          <td>
+            <select name="type_evenement">
+              {% for value, label in item.EVENEMENT_CHOICES %}
+              <option value="{{ value }}" {% if item.type_evenement == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td><input type="number" name="quantite" value="{{ item.quantite }}" min="1"></td>
+          <td>{{ item.photobooth.price }} €</td>
+          <td>{{ item.duration }} j</td>
+          <td>{{ item.subtotal|floatformat:2 }} €</td>
+          <td>
+            <button type="submit"><i class="fas fa-edit"></i></button><br>
+            <a href="{% url 'remove_from_cart' item.id %}" class="remove-item"><i class="fas fa-trash-alt"></i></a>
+          </td>
+        </form>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+<!-- Ancien formulaire supprimé ici -->
+<div class="apply-coupon-form">
+  <form id="coupon-form" action="{% url 'apply_coupon' %}" method="POST">
+    {% csrf_token %}
+
+    <input type="text" name="code" id="coupon-code">
+    
+    <button type="submit">{% trans "Appliquer" %}</button>
+  </form>
+</div>
+
+<div id="messages" class="mt-2 text-sm"></div>
+
+
+<div class="cart-summary mt-4 p-4 border rounded">
+
+    <!-- Sous-total -->
+    <div class="flex justify-between">
+        <span>{% trans "Sous-total :" %}</span>
+        <span id="subtotal">{{ subtotal|floatformat:2 }}</span> €
+    </div>
+
+    <!-- Réduction (masquée par défaut) -->
+    <div id="discount-row" class="hidden flex justify-between text-green-600 font-medium mt-2">
+
+        <span>
+            Réduction (
+            <span id="coupon-code-display"></span>
+            <span id="coupon-percent" class="font-semibold"></span>
+            ) :
+        </span>
+
+        <span id="discount-amount">0.00</span> €
+    </div>
+
+    <!-- Total -->
+    <div class="flex justify-between font-bold mt-2">
+        <span>{% trans "Total :" %}</span>
+        <span id="total">{{ final_total|floatformat:2 }}</span> €
+    </div>
+
+    <a href="#" id="checkout-button" class="btn-checkout mt-4 block">
+        {% trans "Passer au paiement" %}
+    </a>
+
+</div>
+
+<div class="mt-6 text-right">
+  <a href="{% url 'confirm_cart' %}" class="btn-confirm">
+    {% trans "Confirmer ma réservation" %}
+  </a>
+</div>
+{% endif %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    const form = document.getElementById('coupon-form');
+    const messagesDiv = document.getElementById('messages');
+
+    const subtotalEl = document.getElementById('subtotal');
+    const discountRow = document.getElementById('discount-row');
+    const discountAmount = document.getElementById('discount-amount');
+
+    const couponDisplay = document.getElementById('coupon-code-display');
+    const couponPercent = document.getElementById('coupon-percent');
+
+    const totalEl = document.getElementById('total');
+
+    function getCookie(name) {
+        let cookieValue = null;
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+        return cookieValue;
+    }
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const codeInput = document.getElementById('coupon-code');
+        const code = codeInput.value.trim();
+
+        if (!code) {
+            messagesDiv.innerHTML = `<div class="p-2 bg-red-500 text-white rounded">Entrez un code</div>`;
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('code', code);
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+        try {
+            const response = await fetch("{% url 'apply_coupon' %}", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                messagesDiv.innerHTML = `<div class="p-2 bg-red-500 text-white rounded">${data.error}</div>`;
+                discountRow.classList.add('hidden');
+                return;
+            }
+
+            // 🎉 COUPON APPLIQUÉ
+            messagesDiv.innerHTML = `<div class="p-2 bg-green-600 text-white rounded">${data.message}</div>`;
+
+            // Afficher le bloc réduction
+            discountRow.classList.remove("hidden");
+
+            // Affiche le code coupon
+            couponDisplay.textContent = code;
+
+            // Affiche le type : pourcent ou fixe
+            if (data.discount_type === "percent") {
+                let percentValue = parseFloat(data.discount_value); // PAS multiplié par 100
+                document.getElementById("coupon-percent").textContent = ` (-${percentValue}%)`;
+            } else {
+                document.getElementById("coupon-percent").textContent = "";
+            }
+
+
+            // Montant de la réduction
+            discountAmount.textContent = Number(data.discount_amount).toFixed(2);
+
+            // Mise à jour total
+            subtotalEl.textContent = Number(data.subtotal).toFixed(2);
+            totalEl.textContent = Number(data.total_final).toFixed(2);
+
+        } catch (err) {
+            console.error(err);
+            messagesDiv.innerHTML = `<div class="p-2 bg-red-500 text-white rounded">Erreur serveur</div>`;
+        }
+    });
+
+});
+</script>
+
+{% endblock %}
