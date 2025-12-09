@@ -4,6 +4,106 @@
 {% block title %}Connexion{% endblock %}
 
 {% block content %}
+<style>
+  body {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .navbar {
+      background-color: rgba(91, 110, 157, 0.85);
+      border-bottom: 2px solid #B08824;
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+  }
+
+  /* Bloc Bienvenue + Connexion plein écran jusqu'au footer */
+  .welcome-login-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      padding: 80px 50px 50px 50px;
+      background: linear-gradient(135deg, #5B6E9D, #B08824);
+      color: #fff;
+
+      /* prend tout l'espace disponible entre navbar et footer */
+      flex: 1;
+      min-height: calc(100vh - 60px /*navbar*/ - 120px /*footer*/);
+  }
+
+  .welcome-section {
+      flex: 1;
+      padding: 50px;
+  }
+
+  .welcome-section h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+  }
+
+  .welcome-section p {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      max-width: 600px;
+  }
+
+  .login-container {
+      width: 100%;
+      max-width: 450px;
+      z-index: 2;
+      position: relative;
+  }
+
+  .card {
+      background-color: rgba(33, 37, 41, 0.85);
+      color: #fff;
+  }
+
+  .form-label { color: #ced4da; }
+  .form-control { background-color: #212529; color: #fff; border: 1px solid #495057; }
+  .form-control:focus { border-color: #0d6efd; box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25); }
+  a { color: #0d6efd; }
+  a:hover { text-decoration: underline; }
+
+  .btn-primary {
+      background-color: #5B6E9D;
+      color: #fff;
+      font-weight: 600;
+      border-radius: 50px;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      transition: all 0.3s ease;
+  }
+  .btn-primary:hover { background-color: #B08824; color: #000; }
+
+  hr.border-light { border-color: rgba(255,255,255,0.2); }
+
+  .alert-danger {
+      background-color: rgba(220, 53, 69, 0.85);
+      color: #fff;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      text-align: center;
+  }
+
+  @media (max-width: 768px) {
+      .welcome-login-wrapper { flex-direction: column; padding: 80px 20px 20px 20px; min-height: auto; }
+      .welcome-section { text-align: center; padding: 30px; margin-bottom: 20px; }
+      .welcome-section h1 { font-size: 2rem; }
+      .welcome-section p { font-size: 1rem; max-width: 100%; }
+      .login-container { max-width: 100%; margin-left: 0; }
+  }
+</style>
 
 <div class="welcome-login-wrapper">
   <!-- Bienvenue -->
@@ -35,5 +135,79 @@
         <input type="text" name="username" class="form-control" id="username" required placeholder="Entrez votre nom">
     </div>
 
-    
+<div class="mb-3">
+        <label for="password" class="form-label fw-semibold">{% trans "Mot de passe" %}</label>
+
+        <div class="input-group">
+            <input type="password" name="password" class="form-control pe-5" id="password" required placeholder="Entrez votre mot de passe">
+
+            <!-- Icône œil simple noire -->
+            <span class="input-group-text toggle-password" data-target="password" style="cursor:pointer;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                     fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8z"/>
+                    <path d="M8 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
+                </svg>
+            </span>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 mt-3">
+        {% trans "Connexion" %}
+    </button>
+</form>
+
+        <hr class="my-4 border-light">
+
+        <p class="text-center mb-0">
+          {% trans "Pas encore inscrit ?" %}
+          <a href="{% url 'register' %}" class="fw-semibold">{% trans "Créer un compte" %}</a>
+        </p>
+        <p class="text-center mt-2">
+          <a href="{% url 'password_reset' %}">{% trans "Mot de passe oublié ?" %}</a>
+        </p>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- Footer inchangé comme dans base.html -->
+ <script>
+document.addEventListener("DOMContentLoaded", function () {
+  const toggleIcons = document.querySelectorAll('.toggle-password');
+
+  toggleIcons.forEach(icon => {
+    icon.addEventListener('click', function () {
+      const inputId = this.getAttribute('data-target');
+      const input = document.getElementById(inputId);
+
+      if (!input) return;
+
+      const isPassword = input.type === "password";
+      input.type = isPassword ? "text" : "password";
+
+      // supprime tout contenu du span et ajoute le SVG correspondant
+      this.innerHTML = "";
+      if (isPassword) {
+        // œil barré (mot de passe visible)
+        this.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-slash" viewBox="0 0 16 16">
+            <path d="M13.359 11.238l1.386 1.386-.708.708-1.386-1.386A7.974 7.974 0 0 1 8 13.5C3.523 13.5-.268 10.557-1.542 6.5c1.274-4.057 5.065-7 9.542-7 1.828 0 3.523.598 4.884 1.585l1.386-1.386.708.708-1.386 1.386a7.975 7.975 0 0 1 1.427 2.557z"/>
+            <path d="M5.354 5.354a3 3 0 0 0 4.292 4.292L5.354 5.354z"/>
+          </svg>
+        `;
+      } else {
+        // œil simple (mot de passe masqué)
+        this.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8z"/>
+            <path d="M8 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
+          </svg>
+        `;
+      }
+    });
+  });
+});
+</script>
+
+{% endblock %}

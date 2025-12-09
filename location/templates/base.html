@@ -1,3 +1,5 @@
+{% load static %}
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -283,8 +285,177 @@
         {% endfor %}
     {% endif %}
 </div>
+{% if promo_banners and not request.user.is_staff %}
+  {% for banner in promo_banners %}
+    <div id="promo-banner-{{ forloop.counter }}" class="alert alert-warning text-center sticky-top mb-0" style="z-index: 9999;">
+      {{ banner.message }}
+      {% if banner.promo_code %}
+        <button class="btn btn-sm btn-dark ms-2" onclick="copyPromoCode('{{ banner.promo_code }}')">
+          Copier le code : {{ banner.promo_code }}
+        </button>
+      {% endif %}
+      <button type="button" class="close ms-3" onclick="hidePromoBanner('promo-banner-{{ forloop.counter }}')">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+  {% endfor %}
+  <script>
+    function copyPromoCode(code) {
+      navigator.clipboard.writeText(code).then(() => {
+        const toast = document.createElement('div');
+        toast.textContent = `Code copié : ${code}`;
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.right = '20px';
+        toast.style.background = '#e52e71';
+        toast.style.color = '#fff';
+        toast.style.padding = '10px 15px';
+        toast.style.borderRadius = '25px';
+        toast.style.boxShadow = '0 4px 12px rgba(229, 46, 113, 0.6)';
+        toast.style.zIndex = 11000;
+        toast.style.fontWeight = '600';
+        toast.style.userSelect = 'none';
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.transition = 'opacity 0.5s ease';
+          toast.style.opacity = '0';
+          setTimeout(() => toast.remove(), 500);
+        }, 2000);
+      });
+    }
+
+    function hidePromoBanner(id) {
+      const banner = document.getElementById(id);
+      if (banner) {
+        banner.style.transition = 'opacity 0.5s ease';
+        banner.style.opacity = '0';
+        setTimeout(() => banner.style.display = 'none', 500);
+        sessionStorage.setItem(id + '_closed', '1');
+      }
+    }
+  </script>
+{% endif %}
 
 
+<!-- Contenu principal -->
+<main class="container my-4">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer class="text-center mt-auto">
+    <div class="container">
+        <p class="mb-2">&copy; {% trans "2025 IdealBooth. Tous droits réservés." %}</p>
+        <p>
+            <a href="{% url 'mentions_legales' %}" class="text-light">{% trans "Mentions légales" %}</a> | 
+            <a href="{% url 'politique_confidentialite' %}" class="text-light">{% trans "Politique de confidentialité" %}</a>
+
+        </p>
+        <!-- Réseaux sociaux -->
+        <div class="social-icons mt-3">
+            <a href="https://www.facebook.com/tonprofil" target="_blank" rel="noopener" aria-label="Facebook">
+                <i class="fab fa-facebook-f"></i>
+            </a>
+            <a href="https://www.instagram.com/tonprofil" target="_blank" rel="noopener" aria-label="Instagram">
+                <i class="fab fa-instagram"></i>
+            </a>
+            <a href="https://twitter.com/tonprofil" target="_blank" rel="noopener" aria-label="Twitter">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </div>
+    </div>
+</footer>
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Script pour gérer le CSRF token -->
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie("csrftoken");
+</script>
+
+<!-- Script Stripe avec CSRF sécurisé -->
+{% block scripts %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    const stripe = Stripe("{{ STRIPE_PUBLIC_KEY }}");
+
+    document.getElementById("checkout-button")?.addEventListener("click", function () {
+        fetch("{% url 'create_checkout_session' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken,
+            },
+            credentials: "include"
+        })
+        .then(response => response.json())
+        .then(session => {
+            if (session.error) {
+                alert(session.error);
+            } else {
+                stripe.redirectToCheckout({ sessionId: session.id });
+            }
+        })
+        .catch(error => console.error("Erreur :", error));
+    });
+</script>
+<script>
+function addToCartAjax(photoboothId) {
+    const formData = new FormData();
+    formData.append("quantite", 1);  // tu peux adapter
+    formData.append("start_date", document.getElementById("start_date").value);
+    formData.append("end_date", document.getElementById("end_date").value);
+
+    fetch(`/cart/add/${photoboothId}/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mettre à jour le badge du panier
+            document.getElementById("cart-count").textContent = data.cart_count;
+        }
+        alert(data.message);
+    })
+    .catch(error => console.error("Erreur:", error));
+}
+
+// Helper pour CSRF Django
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+{% endblock %}
 
 </body>
 </html>
