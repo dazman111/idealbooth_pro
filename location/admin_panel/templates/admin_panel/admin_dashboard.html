@@ -139,7 +139,16 @@
                 <a href="{% url 'admin_panel:manage_photobooths' %}" class="stretched-link text-decoration-none text-danger">Gérer les modèles</a>
             </div>
         </div>
-
+                <!-- Card: Accessoires -->
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card border-0 shadow rounded-3 p-4 h-100">
+                <h5 class="card-title fw-bold mb-2"><i class="bi bi-stars text-info"></i> Accessoires</h5>
+                <a href="{% url 'admin_panel:accessory_list' %}" class="stretched-link text-decoration-none text-info">
+                    Gérer les accessoires
+                </a>
+            </div>
+        </div>
+        
         <!-- Card: Blog -->
         <div class="col-12 col-md-6 col-lg-4">
             <div class="card border-0 shadow rounded-3 p-4 h-100">
@@ -164,7 +173,7 @@
         <div class="col-12 col-md-6 col-lg-4">
             <div class="card border-0 shadow rounded-3 p-4 h-100">
                 <h5 class="card-title fw-bold mb-2"><i class="bi bi-ticket-detailed text-primary"></i> Coupons</h5>
-                <a href="{% url 'admin_coupon_list' %}" class="stretched-link text-decoration-none text-primary">Gérer les coupons</a>
+                <a href="{% url 'admin_panel:admin_coupon_list' %}" class="stretched-link text-decoration-none text-primary">Gérer les coupons</a>
             </div>
         </div>
 
@@ -215,20 +224,6 @@
     </div>
 
     <!-- Tableau des réservations AJAX -->
-    <div class="table-responsive mt-5">
-        <table class="table table-bordered" id="reservations-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Utilisateur</th>
-                    <th>Modele</th>
-                    <th>Date</th>
-                    <th>Statut</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
 
     {{ reservations_by_month|json_script:"labels" }}
     {{ revenue_by_month|json_script:"labels2" }}
@@ -240,6 +235,49 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Récupération des données JSON injectées par Django
+    const reservationsData = JSON.parse(document.getElementById('labels').textContent);
+    const revenueData = JSON.parse(document.getElementById('labels2').textContent);
+
+    // Graphique des réservations mensuelles
+    const reservationCtx = document.getElementById('reservationChart').getContext('2d');
+    new Chart(reservationCtx, {
+        type: 'bar',
+        data: {
+            labels: reservationsData.map(item => new Date(item.month).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })),
+            datasets: [{
+                label: 'Réservations',
+                data: reservationsData.map(item => item.count),
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgb(54, 162, 235)',
+                borderWidth: 1
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    // Graphique des revenus mensuels
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: revenueData.map(item => new Date(item.month).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })),
+            datasets: [{
+                label: 'Revenus (€)',
+                data: revenueData.map(item => item.total),
+                backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                borderColor: 'rgba(40, 167, 69, 1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: { responsive: true }
+    });
+});
+</script>
 
 <script>
     // Fonction pour récupérer les valeurs des cookies, notamment le jeton CSRF

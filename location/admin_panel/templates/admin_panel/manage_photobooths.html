@@ -1,13 +1,15 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block content %}
 <div class="container mt-4">
     <h2 class="mb-4">📸 Gestion des photobooths</h2>
-     <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">⬅ Retour au Dashboard</a>
+    <a href="{% url 'admin_panel:admin_dashboard' %}" class="btn btn-secondary">⬅ Retour au Dashboard</a>
+
     <div class="d-flex justify-content-end mb-3">
-        <a href="{% url 'add_photobooth' %}" class="btn btn-success">➕ Ajouter un modèle</a>
+        <a href="{% url 'admin_panel:add_photobooth' %}" class="btn btn-success">➕ Ajouter un modèle</a>
     </div>
+
     <div class="row">
         {% for booth in photobooths %}
         <div class="col-md-4 mb-4">
@@ -16,26 +18,38 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ booth.name }}</h5>
                     <p class="card-text">{{ booth.description|truncatechars:100 }}</p>
-                    <p class="text-muted">Prix : {{ booth.price }} €</p>
+                    <p class="text-muted">Prix : {{ booth.price_per_day }} €</p>
+
                     <p>
-                        Stock total : {{ booth.stock }}<br>
-                        Disponible : 
+                        ✅ Disponible en ligne : 
                         {% if booth.available > 0 %}
                             <span class="text-success">{{ booth.available }}</span>
                         {% else %}
                             <span class="text-danger">Indisponible</span>
-                            <form action="{% url 'restock_photobooth' booth.id %}" method="post" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-primary mt-2">
-                                    ➕ Réapprovisionner
-                                </button>
-                            </form>
                         {% endif %}
+                        <br>
+                        📦 En stock : {{ booth.stock }}
                     </p>
 
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'edit_photobooth' booth.id %}" class="btn btn-sm btn-warning">Modifier</a>
-                        <form action="{% url 'delete_photobooth' booth.id %}" method="post" style="display:inline;">
+                    <!-- Bouton Restocker (+1 en stock) -->
+                    <form method="post" action="{% url 'admin_panel:restock_photobooth' booth.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="stock">
+                        <button type="submit" class="btn btn-sm btn-primary">➕ Restocker</button>
+                    </form>
+
+                    <!-- Bouton Remettre en ligne (si stock > 0) -->
+                    {% if booth.stock > 0 %}
+                    <form method="post" action="{% url 'admin_panel:restock_photobooth' booth.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="online">
+                        <button type="submit" class="btn btn-sm btn-success">🌐 Remettre en ligne</button>
+                    </form>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between mt-3">
+                        <a href="{% url 'admin_panel:edit_photobooth' booth.pk %}" class="btn btn-sm btn-warning">Modifier</a>
+                        <form action="{% url 'admin_panel:delete_photobooth' booth.pk %}" method="post" style="display:inline;">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Supprimer ce modèle ?');">
                                 Supprimer

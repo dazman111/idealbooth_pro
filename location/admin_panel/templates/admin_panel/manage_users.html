@@ -4,7 +4,7 @@
 {% block content %}
 <div class="container mt-4">
     <h2 class="mb-4">👥 Gestion des utilisateurs</h2>
-    <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">⬅ Retour au Dashboard</a>
+    <a href="{% url 'admin_panel:admin_dashboard' %}" class="btn btn-secondary">⬅ Retour au Dashboard</a>
 
     <div class="table-responsive bg-white p-3 rounded shadow-sm">
         <table class="table table-bordered table-striped">
@@ -33,17 +33,17 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'admin_user_detail' user.id %}" class="btn btn-sm btn-info">Voir</a>
-                        <a href="{% url 'edit_user' user.id %}" class="btn btn-sm btn-warning">Modifier</a>
+                        <a href="{% url 'admin_panel:admin_user_detail' user.id %}" class="btn btn-sm btn-info">Voir</a>
+                        <a href="{% url 'admin_panel:edit_user' user.id %}" class="btn btn-sm btn-warning">Modifier</a>
 
-                    <form method="POST" action="{% url 'admin_delete_user' user.id %}" style="display:inline;">
+                    <form method="POST" action="{% url 'admin_panel:admin_delete_user' user.id %}" style="display:inline;">
                         {% csrf_token %}
                         {% if user.is_active %}
                             <button type="submit" class="btn btn-sm btn-danger">Désactiver</button>
                         {% else %}
                     </form>  <!-- Fermeture du form précédent -->
 
-                    <form method="POST" action="{% url 'admin_reactivate_user' user.id %}" style="display:inline;">
+                    <form method="POST" action="{% url 'admin_panel:admin_reactivate_user' user.id %}" style="display:inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-sm btn-success">Réactiver</button>
                     </form>

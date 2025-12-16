@@ -1,33 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
-
 <div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
-
     <div class="bg-white dark:bg-gray-800 shadow-xl rounded-xl p-8 max-w-lg w-full text-center border border-gray-200 dark:border-gray-700">
-
         <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-4">
             Déconnexion réussie
         </h1>
-
-        <p class="text-gray-600 dark:text-gray-300 mb-6">
-            Vous avez été déconnecté du panneau d’administration.
-        </p>
-
+        <p class="text-gray-600 dark:text-gray-300 mb-6">{{ message }}</p>
         <div class="mt-6 space-y-4">
-            <a href="{% url 'admin:login' %}"
+            <a href="{% url 'admin_panel:login' %}"
                class="block w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium transition">
                 Se reconnecter à l’admin
             </a>
-
             <a href="{% url 'home' %}"
                class="block w-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 
                text-gray-800 dark:text-gray-200 py-2.5 rounded-lg font-medium transition">
                Retour au site
             </a>
         </div>
-
     </div>
-
 </div>
-
 {% endblock %}

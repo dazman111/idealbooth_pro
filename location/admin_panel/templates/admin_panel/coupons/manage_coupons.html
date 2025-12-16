@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Gestion des coupons</h1>
+<a href="{% url 'admin_panel:admin_add_coupon' %}" class="btn btn-primary">➕ Ajouter un coupon</a>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Code</th>
+      <th>Type</th>
+      <th>Valeur</th>
+      <th>Début</th>
+      <th>Fin</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for coupon in coupons %}
+    <tr>
+      <td>{{ coupon.code }}</td>
+      <td>{{ coupon.get_discount_type_display }}</td>
+      <td>{{ coupon.discount_value }}</td>
+      <td>{{ coupon.date_debut }}</td>
+      <td>{{ coupon.date_fin }}</td>
+      <td>
+        <a href="{% url 'admin_panel:admin_edit_coupon' coupon.id %}" class="btn btn-warning">✏️ Modifier</a>
+        <a href="{% url 'admin_panel:admin_delete_coupon' coupon.id %}" class="btn btn-danger">🗑️ Supprimer</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">Aucun coupon disponible.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

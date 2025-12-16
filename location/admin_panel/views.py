@@ -1,20 +1,22 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model
+from django.contrib.auth.views import LoginView
+from django.contrib.auth import logout
 from django.http import JsonResponse, FileResponse, HttpResponse
 from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib import messages as django_messages
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from accounts.models import Message
-from django.db.models import Count, Sum, F
+from django.db.models import Count, Sum
 from django.db.models.functions import TruncMonth
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
+from django.utils import timezone
 from io import BytesIO
 from reservations.models import Reservation, Invoice
 from .forms import PhotoboothForm
@@ -24,13 +26,25 @@ from datetime import datetime
 import json
 from django.conf import settings
 import logging # Importer le module logging
-from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
 from reportlab.lib import colors
 from blog.models import Article
 from .models import Coupon
 from .forms import CouponForm
 from reservations.models import Notification
+from django.http import HttpResponseForbidden
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from coupons.models import Coupon, PromotionBanner
+from .forms import CouponForm, PromotionBannerForm
+from django.db.models import Count, Sum
+from django.db.models.functions import TruncMonth
+from django.contrib.auth import get_user_model
+from django.contrib import messages
+from photobooths.models import Accessory
+from photobooths.forms import AccessoryForm
+from .permissions import is_admin
+
 
 # Configurez le logger pour cette application
 logger = logging.getLogger(__name__) # 'admin_panel' par défaut si le nom de l'app est admin_panel
@@ -38,52 +52,98 @@ logger = logging.getLogger(__name__) # 'admin_panel' par défaut si le nom de l'
 User = get_user_model()
 
 def is_admin(user):
+    print("is_admin check:", user.username, user.is_staff, user.is_superuser)
     return user.is_superuser or user.is_staff
 
+class CustomLoginView(LoginView):
+    def get_success_url(self):
+        user = self.request.user
+        if user.is_superuser or user.is_staff:
+            return reverse_lazy('admin_panel:admin_dashboard')
+        return reverse_lazy('accounts:user_dashboard')  # ou une autre vue utilisateur
+
+@login_required
+def admin_logout(request):
+    logout(request)
+    # Redirige vers une page spécifique admin après déconnexion
+    return render(request, "admin_panel/logout.html", {"message": "Déconnexion admin réussie"})
+
+#DASHBOARD ADMIN
 @login_required
 @user_passes_test(is_admin)
 def admin_dashboard(request):
+
+    # 🔢 Totaux
     total_users = User.objects.count()
     total_reservations = Reservation.objects.count()
-    total_confirmed = Reservation.objects.filter(status='confirmed').count()
-    total_cancelled = Reservation.objects.filter(status='cancelled').count()
-    total_revenue = Reservation.objects.filter(status='confirmed').aggregate(
-        total=Sum(F('photobooth__price'))
+    total_confirmed = Reservation.objects.filter(status=Reservation.CONFIRMED).count()
+    total_cancelled = Reservation.objects.filter(status=Reservation.CANCELED).count()
+
+    total_revenue = Reservation.objects.filter(
+        status=Reservation.CONFIRMED
+    ).aggregate(
+        total=Sum('photobooth__price')
     )['total'] or 0
 
-    reservations_by_month = Reservation.objects.filter(status='confirmed') \
-        .annotate(month=TruncMonth('start_date')) \
-        .values('month') \
-        .annotate(count=Count('id'), total=Sum('photobooth__price')) \
+    # 📊 Réservations par mois
+    reservations_by_month = (
+        Reservation.objects
+        .filter(status=Reservation.CONFIRMED)
+        .annotate(month=TruncMonth('start_date'))
+        .values('month')
+        .annotate(count=Count('id'))
         .order_by('month')
+    )
 
-    def format_month_data(queryset):
-        return [
-            {
-                'month': item['month'].strftime('%Y-%m-%d'),
-                'count': item.get('count', 0),
-                'total': item.get('total', 0)
-            }
-            for item in queryset
-        ]
-    
-    # Notifications admin
-    notifications = Notification.objects.filter(user__is_staff=True).order_by('-created_at')
+    reservations_data = [
+        {
+            "month": item["month"].strftime("%Y-%m-01"),
+            "count": item["count"]
+        }
+        for item in reservations_by_month
+    ]
+
+    # 💰 Revenus par mois
+    revenue_by_month = (
+        Reservation.objects
+        .filter(status=Reservation.CONFIRMED)
+        .annotate(month=TruncMonth('start_date'))
+        .values('month')
+        .annotate(total=Sum('photobooth__price'))
+        .order_by('month')
+    )
+
+    revenue_data = [
+        {
+            "month": item["month"].strftime("%Y-%m-01"),
+            "total": float(item["total"])
+        }
+        for item in revenue_by_month
+    ]
+
+    # 🔔 Notifications admin
+    notifications = Notification.objects.filter(
+        user__is_staff=True
+    ).order_by('-created_at')
+
     unread_count = notifications.filter(read=False).count()
 
     context = {
-        'total_users': total_users,
-        'total_reservations': total_reservations,
-        'total_confirmed': total_confirmed,
-        'total_cancelled': total_cancelled,
-        'total_revenue': total_revenue,
-        'reservations_by_month': format_month_data(reservations_by_month),
-        'notifications': notifications,
-        'revenue_by_month': format_month_data(reservations_by_month),
+        "total_users": total_users,
+        "total_reservations": total_reservations,
+        "total_confirmed": total_confirmed,
+        "total_cancelled": total_cancelled,
+        "total_revenue": total_revenue,
+        "reservations_by_month": reservations_data,
+        "revenue_by_month": revenue_data,
+        "notifications": notifications,
+        "unread_count": unread_count,
     }
-    return render(request, 'admin_panel/admin_dashboard.html', context)
+
+    return render(request, "admin_panel/admin_dashboard.html", context)
 
 
+#GESTION UTILISATEURS
 @login_required
 @user_passes_test(is_admin)
 def manage_users(request):
@@ -98,32 +158,133 @@ def admin_user_detail(request, user_id):
     return render(request, 'admin_panel/partials/user_detail.html', {'user_detail': user_detail})
 
 @login_required
+@user_passes_test(is_admin)    
+def edit_user(request, user_id):
+    user_obj = get_object_or_404(User, pk=user_id)
+
+    if request.method == 'POST':
+        # On met à jour directement les champs
+        user_obj.username = request.POST.get('username')
+        user_obj.email = request.POST.get('email')
+        user_obj.first_name = request.POST.get('first_name')
+        user_obj.last_name = request.POST.get('last_name')
+        user_obj.save()
+        messages.success(request, "Utilisateur mis à jour avec succès.")
+
+        # Renvoie le template directement pour avoir HTTP 200
+        return render(
+            request,
+            'admin_panel/partials/edit_user.html',
+            {
+                'user': user_obj,
+                'success': True  # pour ton template : afficher le bouton "Retour au dashboard"
+            }
+        )
+
+    return render(
+        request,
+        'admin_panel/partials/edit_user.html',
+        {'user': user_obj}
+    )
+
+@login_required
 @user_passes_test(lambda u: u.is_superuser)
 def admin_delete_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
+
     if request.method == "POST":
+        # Désactivation
         user.is_active = False
+
+        # Anonymisation
+        user.first_name = ""
+        user.last_name = ""
+        user.email = f"deleted_{user.id}@example.com"
+        user.username = f"deleted_{user.id}"
+
+        # Marquer comme supprimé si champ ajouté
+        if hasattr(user, "is_deleted"):
+            user.is_deleted = True
+
         user.save()
-        messages.success(request, "Utilisateur désactivé avec succès ✅")
-    return redirect('manage_users')
+
+        messages.success(request, "Utilisateur désactivé et anonymisé, transactions conservées.")
+        return redirect("admin_panel:manage_users")
+
+    return redirect("admin_panel:manage_users")
 
 
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
-def reactivate_user(request, user_id):
+def admin_reactivate_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
     if request.method == "POST":
         user.is_active = True
         user.save()
-        messages.success(request, "Utilisateur réactivé avec succès ✅")
-    return redirect('manage_users')
+        messages.success(request, "Utilisateur réactivé avec succès.")
+        return redirect("admin_panel:manage_users")
+    return redirect("admin_panel:manage_users")
 
 
+#GESTION PHOTOBOOTHS
 @login_required
 @user_passes_test(is_admin)
 def manage_photobooths(request):
     photobooths = Photobooth.objects.all()
     return render(request, 'admin_panel/manage_photobooths.html', {'photobooths': photobooths})
+
+@login_required
+@user_passes_test(is_admin)
+def photobooth_list(request):
+    booths = Photobooth.objects.all()
+    return render(request, "admin_panel/photobooths/manage_photobooths.html", {"booths": booths})
+
+@login_required
+@user_passes_test(is_admin)
+def restock_photobooth(request, pk):
+    booth = get_object_or_404(Photobooth, pk=pk)
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "stock":
+            booth.stock += 1
+            booth.save()
+            messages.success(request, "1 unité ajoutée au stock.")
+
+        elif action == "online":
+            if booth.stock > 0:
+                booth.available += 1
+                booth.stock -= 1
+                booth.save()
+                messages.success(request, "Un modèle du stock est repassé en ligne.")
+            else:
+                messages.error(request, "Aucun stock disponible pour remettre en ligne.")
+
+        return redirect("admin_panel:admin_photobooth_list")
+
+    return redirect("admin_panel:admin_photobooth_list")
+
+@login_required
+def rent_photobooth(request, pk):
+    booth = get_object_or_404(Photobooth, pk=pk)
+
+    if booth.available > 0:
+        # Un booth en ligne est loué
+        booth.available -= 1
+        booth.save()
+        messages.success(request, "Photobooth loué avec succès !")
+
+        # Vérifie si on doit basculer du stock vers en ligne
+        if booth.available == 0 and booth.stock > 0:
+            booth.available += 1
+            booth.stock -= 1
+            booth.save()
+            messages.info(request, "Un modèle du stock est repassé en ligne automatiquement.")
+    else:
+        messages.error(request, "Aucun photobooth disponible en ligne.")
+
+    return redirect("photobooth_list")
 
 @login_required
 @user_passes_test(is_admin)
@@ -144,27 +305,24 @@ def add_photobooth(request):
 @user_passes_test(is_admin)
 def edit_photobooth(request, pk):
     booth = get_object_or_404(Photobooth, pk=pk)
-    success = False  # variable pour le template
 
     if request.method == 'POST':
         form = PhotoboothForm(request.POST, request.FILES, instance=booth)
         if form.is_valid():
             form.save()
             messages.success(request, "Photobooth modifié avec succès.")
-            success = True  # pour afficher le bouton "Retour au dashboard"
+            return redirect('admin_panel:manage_photobooths')  # ← redirection vers le dashboard
         else:
             messages.error(request, "Erreur lors de la modification du photobooth.")
     else:
         form = PhotoboothForm(instance=booth)
 
-    # Renvoyer toujours le template, POST ou GET, avec 200
     return render(
         request,
         'admin_panel/photobooth_form.html',
         {
             'form': form,
             'title': 'Modifier le photobooth',
-            'success': success
         }
     )
 
@@ -196,6 +354,55 @@ def manage_payments(request):
 
     context = {'payments': payments}
     return render(request, 'admin_panel/manage_payments.html', context)
+
+#GESTION DES ACCESSOIRES
+@login_required
+@user_passes_test(is_admin)
+def accessory_list(request):
+    accessories = Accessory.objects.all()
+    return render(request, "admin_panel/accessories/list.html", {"accessories": accessories})
+
+
+@login_required
+@user_passes_test(is_admin)
+def add_accessory(request):
+    if request.method == "POST":
+        form = AccessoryForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Accessoire ajouté avec succès.")
+            return redirect("admin_panel:accessory_list")
+    else:
+        form = AccessoryForm()
+
+    return render(request, "admin_panel/accessories/form.html", {"form": form, "title": "Ajouter un accessoire"})
+
+
+@login_required
+@user_passes_test(is_admin)
+def edit_accessory(request, pk):
+    accessory = get_object_or_404(Accessory, pk=pk)
+
+    if request.method == "POST":
+        form = AccessoryForm(request.POST, request.FILES, instance=accessory)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Accessoire modifié avec succès.")
+            return redirect("admin_panel:accessory_list")
+    else:
+        form = AccessoryForm(instance=accessory)
+
+    return render(request, "admin_panel/accessories/form.html", {"form": form, "title": "Modifier un accessoire"})
+
+
+@login_required
+@user_passes_test(is_admin)
+def delete_accessory(request, pk):
+    accessory = get_object_or_404(Accessory, pk=pk)
+    accessory.delete()
+    messages.success(request, "Accessoire supprimé.")
+    return redirect("admin_panel:accessory_list")
+
 
 @login_required
 @user_passes_test(is_admin)
@@ -329,7 +536,6 @@ def update_reservation_status(request):
         logger.exception(f"Une erreur inattendue est survenue dans update_reservation_status pour ID={reservation_id}, Action={action}.")
         return JsonResponse({'success': False, 'error': f'Une erreur inattendue est survenue : {str(e)}'}, status=500)
 
-
 @login_required
 @user_passes_test(is_admin)
 def manage_reservations(request):
@@ -362,28 +568,51 @@ def reservation_detail(request, reservation_id):
         if not request.user.is_staff and not request.user.is_superuser and reservation.user != request.user:
             return JsonResponse({'success': False, 'error': 'Non autorisé à voir les détails de cette réservation.'}, status=403)
 
-        html = render_to_string('admin_panel/partials/_reservation_detail.html', {'reservation': reservation})
+        html = render_to_string(
+            'admin_panel/partials/_reservation_detail.html',
+            {'reservation': reservation},
+            request=request   # ← important
+        )
+
         return JsonResponse({'success': True, 'html': html})
     except Reservation.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Réservation non trouvée'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': f'Une erreur inattendue est survenue : {str(e)}'}, status=500)
 
-# Configuration de La facture    
+# Configuration de La facture
+
+@login_required
+@user_passes_test(is_admin)
+def admin_facture_detail(request, reservation_id):
+    reservation = get_object_or_404(Reservation, pk=reservation_id)
+
+    # Vérification que l'utilisateur connecté est soit l'utilisateur de la réservation, soit un administrateur
+    if reservation.user != request.user and not request.user.is_staff:
+        return HttpResponse("Non autorisé", status=403)
+
+    # On suppose que chaque réservation confirmée a une facture liée
+    invoice = reservation.invoice
+    return render(request, "admin_panel/facture_detail.html", {
+        "reservation": reservation,
+        "invoice": invoice,
+    })
+
+
 @login_required
 def generate_invoice(request, reservation_id):
     try:
         reservation = get_object_or_404(Reservation, id=reservation_id)
 
-        if reservation.user != request.user:
+        # Autorisation
+        if reservation.user != request.user and not request.user.is_staff:
             return HttpResponse("Non autorisé", status=403)
 
+        # Statut confirmé obligatoire
         if reservation.status != 'confirmed':
             return HttpResponse("La réservation doit être confirmée pour générer une facture.", status=400)
 
-        user = reservation.user
-
-        # --- Créer la facture si elle n'existe pas ---
+        # Créer la facture si absente
         if not reservation.invoice:
             invoice = Invoice.objects.create(
                 user=reservation.user,
@@ -394,165 +623,103 @@ def generate_invoice(request, reservation_id):
         else:
             invoice = reservation.invoice
 
-        # --- Appliquer le coupon si nécessaire ---
+        # Appliquer un coupon si présent
         if hasattr(reservation, 'coupon') and reservation.coupon:
-            invoice.apply_coupon(reservation.coupon)  # ⚠ Assure-toi que cette méthode met à jour total_amount et discount_amount
+            invoice.apply_coupon(reservation.coupon)
 
-        # --- Calculer les montants pour le PDF ---
-        prix_initial = reservation.photobooth.price
-        prix_total = invoice.total_amount
-        discount = prix_initial - prix_total  # calcul de la réduction réelle
+        # Montants (convertis en float pour formatage)
+        prix_initial = float(reservation.photobooth.price)
+        prix_total = float(invoice.total_amount)
+        discount = max(0.0, prix_initial - prix_total)
 
-
-        # --- Infos société (à insérer dans la facture) ---
-        company_name = "Idealbooth SARL"
-        company_vat_number = "N TVA 12345678900978"
-        company_phone = "+32 465 45 67 89"
-        company_email = "bpgloire@gmail.com"
-        company_address = "123 Rue des Lumières, 6000 Charleroi, Belgique"
-
+        # PDF
         buffer = BytesIO()
         p = canvas.Canvas(buffer, pagesize=A4)
         width, height = A4
-# ...
 
-        # En-tête stylisé
-        p.setFillColor(colors.HexColor("#171029"))  # violet profond
-        p.rect(0, height - 100, width, 100, fill=1, stroke=0)
-
-        # Logo
-        logo_path = "static/images/logo11.png"
-        try:
-            p.drawImage(logo_path, 40, height - 90, width=60, height=60, preserveAspectRatio=True, mask='auto')
-        except Exception:
-            pass
-        p.setFont("Helvetica", 10)
-        p.drawRightString(width - 50, height - 60, f"Facture n° {reservation.id}")
-
-        # Numéro de facture horodaté
-        now = datetime.now()
-        invoice_number = f"{now.strftime('%Y%m%d%H%M%S')}-{reservation.id}"
-        p.setFont("Helvetica", 10)
-        p.setFillColor(colors.white)
-        p.drawRightString(width - 50, height - 60, f"Facture n° {invoice_number}")
-        p.drawRightString(width - 50, height - 75, f"Date : {now.strftime('%d/%m/%Y %H:%M')}")
-
-        # Titre de la facture
-        p.setFillColor(colors.HexColor("#FFD700"))  # doré
-        p.setFont("Helvetica-Bold", 14)
-        p.drawString(50, height - 20, "FACTURE DE RÉSERVATION")
-
-        p.setStrokeColor(colors.HexColor("#581fc2"))  # ligne décorative
-        p.setLineWidth(2)
-        p.line(50, height - 110, width - 50, height - 110)
-
-        # Infos société (à gauche)
-        y = height - 140
-        p.setFont("Helvetica-Bold", 12)
+        # Couleur et police par défaut
         p.setFillColor(colors.black)
-        p.drawString(50, y, "Émetteur :")
-        p.setFont("Helvetica", 11)
-        y -= 18
-        p.drawString(60, y, company_name)
-        y -= 15
-        p.drawString(60, y, f"N° TVA : {company_vat_number}")
-        y -= 15
-        p.drawString(60, y, f"Tél : {company_phone}")
-        y -= 15
-        p.drawString(60, y, f"Email : {company_email}")
-        y -= 15
-        p.drawString(60, y, company_address)
+        p.setStrokeColor(colors.black)
 
-        # Infos client (à droite)
-        y_client = height - 140
-        p.setFont("Helvetica-Bold", 12)
-        p.drawString(width / 2 + 20, y_client, "Destinataire :")
-        p.setFont("Helvetica", 11)
-        y_client -= 18
-        p.drawString(width / 2 + 30, y_client, f"{user.get_full_name() or user.username}")
-        y_client -= 15
-        p.drawString(width / 2 + 30, y_client, f"Email : {user.email}")
-        y_client -= 15
-        p.drawString(width / 2 + 30, y_client, f"Tél : {getattr(user, 'phone_number', 'Non fourni')}")
-        y_client -= 15
-        p.drawString(width / 2 + 30, y_client, f"Adresse : {getattr(user, 'address', 'Non fournie')}")
+        # En-tête simple
+        y = height - 50
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(50, y, "FACTURE DE RÉSERVATION")
+        y -= 20
+        p.setFont("Helvetica", 10)
+        now = timezone.now()
+        p.drawString(50, y, f"Date : {now.strftime('%d/%m/%Y %H:%M')}")
+        p.drawRightString(width - 50, y, f"Facture n° {now.strftime('%Y%m%d%H%M%S')}-{reservation.id}")
 
         # Ligne séparatrice
-        y = min(y, y_client) - 30
-        p.setStrokeColor(colors.grey)
-        p.setLineWidth(1)
+        y -= 15
         p.line(50, y, width - 50, y)
-        y -= 30
 
-       # Détails de la réservation
-        p.setFont("Helvetica-Bold", 13)
-        p.drawString(50, y, "Détails de la Réservation")
-        p.setFont("Helvetica", 11)
+        # Infos société
         y -= 20
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, y, "Émetteur :")
+        p.setFont("Helvetica", 10)
+        y -= 15; p.drawString(60, y, "Idealbooth SARL")
+        y -= 15; p.drawString(60, y, "N° TVA : N TVA 12345678900978")
+        y -= 15; p.drawString(60, y, "Tél : +32 465 45 67 89")
+        y -= 15; p.drawString(60, y, "Email : bpgloire@gmail.com")
+        y -= 15; p.drawString(60, y, "Adresse : 123 Rue des Lumières, 6000 Charleroi, Belgique")
 
-        p.drawString(60, y, f"Photobooth : {reservation.photobooth.name}")
-        y -= 15
-        p.drawString(60, y, f"Type d'événement : {reservation.event_type}")  # Mariage, Baptême, Anniversaire, Entreprise
-        y -= 15
-        p.drawString(60, y, f"Date de début : {reservation.start_date.strftime('%d/%m/%Y')}")
-        y -= 15
-        p.drawString(60, y, f"Date de fin : {reservation.end_date.strftime('%d/%m/%Y')}")
-        y -= 15
+        # Infos client
+        y -= 25
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, y, "Destinataire :")
+        p.setFont("Helvetica", 10)
+        user_name = reservation.user.get_full_name() or reservation.user.username
+        y -= 15; p.drawString(60, y, f"Nom : {user_name}")
+        y -= 15; p.drawString(60, y, f"Email : {reservation.user.email or 'Non fourni'}")
+        y -= 15; p.drawString(60, y, f"Tél : {getattr(reservation.user, 'phone_number', 'Non fourni')}")
+        y -= 15; p.drawString(60, y, f"Adresse : {getattr(reservation.user, 'address', 'Non fournie')}")
 
-        # Accessoires éventuels
+        # Détails de la réservation
+        y -= 25
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, y, "Détails de la réservation")
+        p.setFont("Helvetica", 10)
+        y -= 15; p.drawString(60, y, f"Photobooth : {reservation.photobooth.name}")
+        y -= 15; p.drawString(60, y, f"Type d'événement : {reservation.event_type}")
+        y -= 15; p.drawString(60, y, f"Date de début : {reservation.start_date.strftime('%d/%m/%Y')}")
+        y -= 15; p.drawString(60, y, f"Date de fin : {reservation.end_date.strftime('%d/%m/%Y')}")
+
         if hasattr(reservation, 'accessories') and reservation.accessories.exists():
             accessoires_list = ", ".join([acc.name for acc in reservation.accessories.all()])
-            p.drawString(60, y, f"Accessoires : {accessoires_list}")
-            y -= 15
+            y -= 15; p.drawString(60, y, f"Accessoires : {accessoires_list}")
 
-        y -= 15  # Espace avant la prochaine section
+        # Ligne séparatrice montants
+        y -= 20
+        p.line(50, y, width - 50, y)
 
-       # Montant
-        p.setFont("Helvetica-Bold", 13)
-        p.drawString(50, y, "Montant total à payer")
-        y -= 25  # un peu plus d'espace avant le détail
-        p.setFont("Helvetica", 11)
-
-        # Prix initial
-        prix_initial = reservation.photobooth.price
-        p.drawString(60, y, f"Prix initial : {prix_initial:.2f} €")
-        y -= 20  # espace après prix initial
-
-        # Réduction si elle existe
-        if discount > 0:
-            reduction_percent = discount / prix_initial * 100  # calcul du pourcentage
-            p.setFillColor(colors.green)
-            p.drawString(60, y, f"Réduction appliquée : {discount:.2f} € ({reduction_percent:.0f}%)")
-            y -= 20  # espace après réduction
-            p.setFillColor(colors.black)
-
-        # Prix total
+        # Montants
+        y -= 20
         p.setFont("Helvetica-Bold", 12)
-        p.drawString(60, y, f"Prix TTC : {prix_total:.2f} €")
-        y -= 40  # espace avant le remerciement
-
-        # Encadré Remerciement
-        p.setFillColor(colors.HexColor("#8e44ad"))
-        p.setFont("Helvetica-Oblique", 11)
-        p.drawCentredString(width / 2, y, "Merci pour votre confiance et votre réservation !")
-
-        # Signature image
-        signature_path = "static/images/signature.jpg"
-        p.drawImage(signature_path, width - 200, y - 90, width=150, height=50, mask='auto')
+        p.drawString(50, y, "Montant")
         p.setFont("Helvetica", 10)
-        p.drawString(width - 200, y - 105, "Signature de l'émetteur")
+        y -= 15; p.drawString(60, y, f"Prix initial : {prix_initial:.2f} €")
+        if discount > 0 and prix_initial > 0:
+            y -= 15; p.drawString(60, y, f"Réduction appliquée : {discount:.2f} € ({(discount/prix_initial)*100:.0f}%)")
+        y -= 15; p.setFont("Helvetica-Bold", 11); p.drawString(60, y, f"Prix TTC : {prix_total:.2f} €")
 
-        p.showPage()
+        # Remerciement simple
+        y -= 30
+        p.setFont("Helvetica-Oblique", 10)
+        p.drawString(50, y, "Merci pour votre confiance et votre réservation !")
+
+        # Sauvegarde (une seule page, pas de showPage)
         p.save()
         buffer.seek(0)
-
         return FileResponse(buffer, as_attachment=True, filename=f"facture_{reservation.id}.pdf")
 
     except Reservation.DoesNotExist:
         return HttpResponse("Réservation introuvable.", status=404)
     except Exception as e:
+        print(f"Erreur lors de la génération du PDF: {str(e)}")
         return HttpResponse(f"Une erreur est survenue : {str(e)}", status=500)
-
 
 def envoyer_notification_email(user, sujet, message):
     try:
@@ -578,41 +745,6 @@ def cancelled_count_api(request):
         return JsonResponse({"cancelled_count": count})
     return JsonResponse({"error": "Invalid request"}, status=400)
 
-class CustomLoginView(LoginView):
-    def get_success_url(self):
-        user = self.request.user
-        if user.is_superuser or user.is_staff:
-            return reverse_lazy('admin_panel:admin_dashboard')
-        return reverse_lazy('accounts:user_dashboard')  # ou une autre vue utilisateur
-@login_required
-@user_passes_test(is_admin)    
-def edit_user(request, user_id):
-    user_obj = get_object_or_404(User, pk=user_id)
-
-    if request.method == 'POST':
-        # On met à jour directement les champs
-        user_obj.username = request.POST.get('username')
-        user_obj.email = request.POST.get('email')
-        user_obj.first_name = request.POST.get('first_name')
-        user_obj.last_name = request.POST.get('last_name')
-        user_obj.save()
-        messages.success(request, "Utilisateur mis à jour avec succès.")
-
-        # Renvoie le template directement pour avoir HTTP 200
-        return render(
-            request,
-            'admin_panel/partials/edit_user.html',
-            {
-                'user': user_obj,
-                'success': True  # pour ton template : afficher le bouton "Retour au dashboard"
-            }
-        )
-
-    return render(
-        request,
-        'admin_panel/partials/edit_user.html',
-        {'user': user_obj}
-    )
 
 @staff_member_required 
 def admin_messages(request):
@@ -641,3 +773,45 @@ def admin_messages(request):
         'messages_list': messages_list,
         'unread_count': unread_count
     })
+
+#LISTE COUPONS
+@login_required
+def coupon_list(request):
+    coupons = Coupon.objects.all()
+    return render(request, "admin_panel/coupons/manage_coupons.html", {"coupons": coupons})
+
+# Ajouter un coupon
+@login_required
+def add_coupon(request):
+    if request.method == "POST":
+        form = CouponForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Coupon ajouté avec succès.")
+            return redirect("coupon_list")
+    else:
+        form = CouponForm()
+    return render(request, "admin_panel/coupons/add_coupon.html", {"form": form})
+
+# Modifier un coupon
+@login_required
+def edit_coupon(request, coupon_id):
+    coupon = get_object_or_404(Coupon, id=coupon_id)
+    if request.method == "POST":
+        form = CouponForm(request.POST, instance=coupon)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Coupon modifié avec succès.")
+            return redirect("admin_panel:admin_coupon_list")
+
+    else:
+        form = CouponForm(instance=coupon)
+    return render(request, "admin_panel/coupons/edit_coupon.html", {"form": form, "coupon": coupon})
+
+# Supprimer un coupon
+@login_required
+def delete_coupon(request, coupon_id):
+    coupon = get_object_or_404(Coupon, id=coupon_id)
+    coupon.delete()
+    messages.success(request, "Coupon supprimé.")
+    return redirect("admin_panel:admin_coupon_list")

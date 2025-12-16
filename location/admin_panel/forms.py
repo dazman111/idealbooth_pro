@@ -1,7 +1,7 @@
 # le coupon a ete modifier apres piratage
 from django import forms
 from photobooths.models import Photobooth  # ou le bon chemin vers le modèle
-from .models import Coupon
+from coupons.models import Coupon, PromotionBanner
 
 
 class PhotoboothForm(forms.ModelForm):
@@ -13,17 +13,12 @@ class PhotoboothForm(forms.ModelForm):
 class CouponForm(forms.ModelForm):
     class Meta:
         model = Coupon
-        fields = ["code", "discount_percent", "discount_amount", "expiration_date", "is_active"]
+        fields = ["code", "description", "discount_type", "discount_value",
+                  "date_debut", "date_fin", "actif", "utilisation_max"]
 
-    def clean(self):
-        cleaned_data = super().clean()
-        percent = cleaned_data.get("discount_percent")
-        amount = cleaned_data.get("discount_amount")
-
-        if not percent and not amount:
-            raise forms.ValidationError("Vous devez définir une réduction en % ou un montant.")
-        if percent and amount:
-            raise forms.ValidationError("Ne mettez PAS les deux : choisissez % OU montant.")
-
-        return cleaned_data
+    
+class PromotionBannerForm(forms.ModelForm):
+    class Meta:
+        model = PromotionBanner
+        fields = ["message", "promo_code", "start_date", "end_date"]
 

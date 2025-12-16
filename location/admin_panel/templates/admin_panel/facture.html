@@ -1,0 +1,9 @@
+<h1>Facture #{{ invoice.id }}</h1>
+<p>Réservation : {{ reservation.id }}</p>
+<p>Utilisateur : {{ reservation.user.username }}</p>
+<p>Photobooth : {{ reservation.photobooth.name }}</p>
+<p>Montant total : {{ invoice.total_amount }} €</p>
+<p>Statut : {{ invoice.payment_status }}</p>
+{% if invoice.payment_date %}
+<p>Date de paiement : {{ invoice.payment_date }}</p>
+{% endif %}

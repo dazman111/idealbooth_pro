@@ -2,7 +2,7 @@
 
 {% block content %}
 <h2 class="text-2xl font-bold mb-6 text-gray-800">Gestion des Réservations</h2>
- <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">⬅ Retour au Dashboard</a>
+ <a href="{% url 'admin_panel:admin_dashboard' %}" class="btn btn-secondary">⬅ Retour au Dashboard</a>
 
 <!-- MODAL -->
 <div id="reservationModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 transition-opacity duration-300 ease-in-out opacity-0 pointer-events-none" style="display:none;">
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Met à jour le statut de la réservation via AJAX
     function updateReservationStatus(id, action) {
         const executeUpdate = () => {
-            fetch(`{% url 'update_reservation_status' %}?status=${statusFilter.value}&user=${userFilter.value}`, {
+            fetch(`{% url 'admin_panel:update_reservation_status' %}?status=${statusFilter.value}&user=${userFilter.value}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -227,9 +227,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const action = button.getAttribute('data-action');
 
         if (action === 'details') {
-            fetch(`/admin/reservations/${id}/detail/`, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
+        const urlTemplate = "{% url 'admin_panel:reservation_detail' 0 %}";
+        const url = urlTemplate.replace("0", id);
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+
+
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -249,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 showInfoModal("Impossible de charger les détails de la réservation.", true);
             });
         } else if (action === 'invoice') {
-            window.location.href = `/admin/reservations/${id}/generate-invoice/`;
+            window.location.href = `{% url 'admin_panel:generate_invoice' 0 %}`.replace("0", id);
         } else {
             updateReservationStatus(id, action);
         }

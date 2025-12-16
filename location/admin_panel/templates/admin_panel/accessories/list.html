@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>🎭 Gestion des accessoires</h2>
+
+    <a href="{% url 'admin_panel:add_accessory' %}" class="btn btn-success mb-3">➕ Ajouter un accessoire</a>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Nom</th>
+                <th>Prix</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for acc in accessories %}
+            <tr>
+                <td>
+                    {% if acc.image %}
+                        <img src="{{ acc.image.url }}" width="60">
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td>{{ acc.name }}</td>
+                <td>{{ acc.price }} €</td>
+                <td>
+                    <a href="{% url 'admin_panel:edit_accessory' acc.pk %}" class="btn btn-warning btn-sm">Modifier</a>
+                    <a href="{% url 'admin_panel:delete_accessory' acc.pk %}" class="btn btn-danger btn-sm"
+                       onclick="return confirm('Supprimer cet accessoire ?')">Supprimer</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center">Aucun accessoire enregistré.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

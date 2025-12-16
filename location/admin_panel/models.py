@@ -61,3 +61,15 @@ class Coupon(models.Model):
     def is_expired(self):
         from django.utils import timezone
         return self.expiration_date < timezone.now().date()
+
+class AdminNotification(models.Model):
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    read = models.BooleanField(default=False)
+
+    # optionnel si tu veux relier à un user
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,null=True,blank=True,on_delete=models.SET_NULL)
+
+    def __str__(self):
+        return self.message[:50]
+

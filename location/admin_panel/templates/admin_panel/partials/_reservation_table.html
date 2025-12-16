@@ -1,5 +1,3 @@
-{# admin_panel/partials/_reservation_table.html #}
-
 {% comment %}
     Ce template est utilisé pour rendre le tableau des réservations.
     Il est inclus dans 'admin_dashboard.html' et 'manage_reservations.html' pour l'affichage initial
@@ -16,6 +14,7 @@
                 <th scope="col" class="px-6 py-3">Photobooth</th>
                 <th scope="col" class="px-6 py-3">Date</th>
                 <th scope="col" class="px-6 py-3">Statut</th>
+                <th scope="col" class="px-6 py-3">Paiement</th>
                 <th scope="col" class="px-6 py-3 text-center">Actions</th>
             </tr>
         </thead>
@@ -23,10 +22,23 @@
             {% for reservation in reservations %}
             <tr class="border-b hover:bg-gray-50 transition">
                 <td>{{ forloop.revcounter }}</td>  <!-- compte à rebours, 37, 36, ..., 1 -->
-                <td class="px-6 py-4 whitespace-nowrap font-medium">{{ reservation.user.username }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">{{ reservation.photobooth.name }}</td>
-                {# Utilisation de reservation.start_date pour une date précise #}
-                <td class="px-6 py-4 whitespace-nowrap">{{ reservation.start_date|date:"d/m/Y H:i" }}</td>
+                <td class="px-6 py-4 whitespace-nowrap font-medium">
+                    <!-- Nom et prénom -->
+                    {{ reservation.user.first_name }} {{ reservation.user.last_name }}
+                    <!-- Email en petit -->
+                    <div class="text-xs text-gray-500">{{ reservation.user.email }}</div>
+                    <!-- ID de l'utilisateur -->
+                    <div class="text-xs text-gray-400">ID: {{ reservation.user.id }}</div>
+                </td>
+
+                <td class="px-6 py-4 whitespace-nowrap">
+                    {{ reservation.photobooth.name }}
+                </td>
+
+                <td class="px-6 py-4 whitespace-nowrap">
+                    {{ reservation.start_date|date:"d/m/Y" }} - {{ reservation.end_date|date:"d/m/Y" }}
+                </td>
+
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span class="py-1 px-3 rounded-full text-xs font-medium
                         {% if reservation.status == 'pending' %}
@@ -39,15 +51,36 @@
                         {{ reservation.get_status_display }}
                     </span>
                 </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    {% if reservation.invoice %}
+                        <div>
+                            {% if reservation.invoice.payment_status == 'paid' %}
+                                <span class="text-green-600 font-semibold">Payé</span>
+                                {% if reservation.invoice.payment_date %}
+                                    <div class="text-xs text-gray-500">Le {{ reservation.invoice.payment_date|date:"d/m/Y H:i" }}</div>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-yellow-600 font-semibold">En attente</span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <span class="text-gray-500">Aucune facture</span>
+                    {% endif %}
+                </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center space-x-1">
                     <!-- Détails -->
-                    <button class="action-btn inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:bg-blue-100 rounded-full transition" data-id="{{ reservation.id }}" data-action="details" title="Détails">
-                        🔍
-                    </button>
-                    
+                    <button
+  type="button"
+  class="action-btn inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:bg-blue-100 rounded-full transition"
+  data-id="{{ reservation.id }}"
+  data-action="details"
+  title="Détails"
+>
+  🔍
+</button>
+
                     <!-- Confirmer -->
                     {% if reservation.status == 'pending' %}
-                        {# Le bouton Confirmer doit apparaître si la réservation est en attente #}
                         <button class="action-btn inline-flex items-center justify-center w-8 h-8 text-green-600 hover:bg-green-100 rounded-full transition" data-id="{{ reservation.id }}" data-action="confirm" title="Confirmer">
                             ✅
                         </button>
@@ -61,10 +94,6 @@
                     {% endif %}
 
                     <!-- Marquer comme payé (visible si facture existe, n'est pas payée et réservation non annulée) -->
-                    {% comment %} 
-                        Assurez-vous que la vue 'manage_reservations' utilise 'select_related('invoice')'
-                        pour que 'reservation.invoice' soit disponible.
-                    {% endcomment %}
                     {% if reservation.invoice and reservation.invoice.payment_status != 'paid' and reservation.status != 'cancelled' %}
                     <button class="action-btn inline-flex items-center justify-center w-8 h-8 text-orange-600 hover:bg-orange-100 rounded-full transition" data-id="{{ reservation.id }}" data-action="mark_paid" title="Marquer comme payé">
                         💰
@@ -81,7 +110,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500">Aucune réservation trouvée.</td>
+                <td colspan="7" class="px-6 py-4 text-center text-gray-500">Aucune réservation trouvée.</td>
             </tr>
             {% endfor %}
         </tbody>

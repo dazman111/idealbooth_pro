@@ -16,7 +16,7 @@
             <tr><th>Staff</th><td>{% if user_detail.is_staff %}🛠️ Oui{% else %}Non{% endif %}</td></tr>
             <tr><th>Super utilisateur</th><td>{% if user_detail.is_superuser %}🔑 Oui{% else %}Non{% endif %}</td></tr>
         </table>
-        <a href="{% url 'manage_users' %}" class="btn btn-secondary mt-3">⬅ Retour</a>
+        <a href="{% url 'admin_panel:manage_users' %}" class="btn btn-secondary mt-3">⬅ Retour</a>
     </div>
 </div>
 {% endblock %}

@@ -5,6 +5,9 @@
     <p><strong>Photobooth :</strong> {{ reservation.photobooth.name }}</p>
     <p><strong>Date :</strong> {{ reservation.date }}</p>
     <p><strong>Statut :</strong> {{ reservation.get_status_display }}</p>
+
+    <!-- Bouton pour voir la facture -->
+    <a href="{% url 'facture' reservation.id %}" class="btn btn-primary">Voir la facture</a>
+
     <button onclick="closeModal()">Fermer</button>
-  </div>
-  
+</div>

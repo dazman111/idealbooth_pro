@@ -1,13 +1,15 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
 <div class="container mt-4">
     <h2>{{ title }}</h2>
+
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Enregistrer</button>
-        <a href="{% url 'admin_panel:manage_photobooths' %}" class="btn btn-secondary">Annuler</a>
+
+        <button class="btn btn-primary">Enregistrer</button>
+        <a href="{% url 'admin_panel:accessory_list' %}" class="btn btn-secondary">Annuler</a>
     </form>
 </div>
 {% endblock %}
