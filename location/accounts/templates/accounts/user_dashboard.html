@@ -307,10 +307,14 @@ nav.inline-flex .bg-gray-100 {
                                 </span>
                             {% endif %}
                         </div>
-                        <p>{% trans "Montant :" %} <strong>{{ invoice.total_amount }} €"</strong></p>
+                        <p>{% trans "Montant :" %} <strong>{{ invoice.total_amount|floatformat:2 }} €</strong></p>
+
                         {% if invoice.coupon_used %}
-                            <p>{% trans "Coupon :" %} <strong>{{ invoice.coupon_used.code }}</strong> ({{ invoice.discount_amount }} {% trans "€ de réduction)" %}</p>
+                        {% blocktrans with code=invoice.coupon_used.code amount=invoice.discount_amount|floatformat:2 %}
+                            Coupon : <strong>{{ code }}</strong> ({{ amount }} € de réduction)
+                        {% endblocktrans %}
                         {% endif %}
+
                         <p class="text-sm text-gray-500">{% trans "Date :" %} {{ invoice.created_at|date:"d M Y H:i" }}</p>
 
                         <div class="mt-2">
@@ -334,7 +338,7 @@ nav.inline-flex .bg-gray-100 {
                                             </div>
                                             {# Ajout du bouton de téléchargement pour chaque réservation #}
                                             {% if reservation.status == 'confirmed' %}
-                                            <a href="{% url 'generate_invoice' reservation.id %}" 
+                                            <a href="{% url 'accounts:generate_invoice' reservation.id %}" 
                                                class="inline-flex items-center px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition"
                                                target="_blank" rel="noopener noreferrer">
                                                 {% trans "Télécharger la facture" %}
@@ -391,7 +395,7 @@ nav.inline-flex .bg-gray-100 {
 
     <section id="profile">
         <h2 class="text-2xl font-semibold mb-4">{% trans "Modifier mon profil" %}</h2>
-        <form action="{% url 'edit_profile' %}" method="post" class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 space-y-4 transition">
+        <form action="{% url 'accounts:edit_profile' %}" method="post" class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 space-y-4 transition">
            {% csrf_token %}
 
             <div>
@@ -429,7 +433,7 @@ nav.inline-flex .bg-gray-100 {
             <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded">
                 {% trans "Mettre à jour" %}
             </button>
-            <a href="{% url 'change_password' %}" class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded">
+            <a href="{% url 'accounts:change_password' %}" class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded">
                 {% trans "Changer le mot de passe" %}
             </a>
         </div>
@@ -440,12 +444,12 @@ nav.inline-flex .bg-gray-100 {
                     Votre compte est programmé pour suppression le 
                     <strong>{{ user.profile.deletion_date|date:"d/m/Y H:i" }}</strong>.
                 </p>
-                <a href="{% url 'cancel_account_deletion' %}" 
+                <a href="{% url 'accounts:cancel_account_deletion' %}" 
                 class="text-yellow-600 hover:underline text-sm">
                     Annuler la suppression du compte
                 </a>
             {% else %}
-                <a href="{% url 'request_account_deletion' %}" 
+                <a href="{% url 'accounts:request_account_deletion' %}" 
                 class="text-red-600 hover:underline text-sm"
                 onclick="return confirm('Voulez-vous vraiment programmer la suppression de votre compte ?');">
                     Supprimer mon compte (dans 30 jours)
@@ -456,7 +460,7 @@ nav.inline-flex .bg-gray-100 {
 
     <section id="contact">
         <h2 class="text-2xl font-semibold mb-4">{% trans "Envoyer un message à l'admin" %}</h2>
-        <form action="{% url 'contact_admin' %}" method="post" class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 space-y-4 transition">
+        <form action="{% url 'accounts:contact_admin' %}" method="post" class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 space-y-4 transition">
             {% csrf_token %}
             <div>
                 <label for="subject" class="block text-sm font-medium">{% trans "Sujet" %}</label>

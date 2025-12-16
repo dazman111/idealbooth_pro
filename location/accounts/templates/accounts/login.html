@@ -127,7 +127,7 @@
         {% endif %}
 
         <form method="POST" novalidate>
-     <form method="post" action="{% url 'login' %}">
+     <form method="post" action="{% url 'accounts:login' %}">
     {% csrf_token %}
 
     <div class="mb-3">
@@ -161,10 +161,10 @@
 
         <p class="text-center mb-0">
           {% trans "Pas encore inscrit ?" %}
-          <a href="{% url 'register' %}" class="fw-semibold">{% trans "Créer un compte" %}</a>
+          <a href="{% url 'accounts:register' %}" class="fw-semibold">{% trans "Créer un compte" %}</a>
         </p>
         <p class="text-center mt-2">
-          <a href="{% url 'password_reset' %}">{% trans "Mot de passe oublié ?" %}</a>
+          <a href="{% url 'accounts:password_reset' %}">{% trans "Mot de passe oublié ?" %}</a>
         </p>
       </div>
     </div>
