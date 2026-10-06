@@ -10,6 +10,11 @@
         {% csrf_token %}
 
         <div class="mb-3">
+            {{ form.event_type.label_tag }}
+            {{ form.event_type }}
+        </div>
+
+        <div class="mb-3">
             {{ form.start_date.label_tag }}
             {{ form.start_date }}
         </div>
@@ -20,15 +25,17 @@
         </div>
 
         <div class="mb-3">
-            <h3>Accessoires disponibles</h3>
+            <h4 class="mb-2">Accessoires disponibles</h4>
 
             {% for accessory in form.accessories %}
-                <label class="d-block">
-                    {{ accessory.tag }} {{ accessory.choice_label }}
-                </label>
+                <div class="form-check">
+                    {{ accessory.tag }}
+                    <label class="form-check-label">
+                        {{ accessory.choice_label }}
+                    </label>
+                </div>
             {% endfor %}
         </div>
-        
 
         <button type="submit" class="btn btn-primary">Réserver</button>
     </form>
