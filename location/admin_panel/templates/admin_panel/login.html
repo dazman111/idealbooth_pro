@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load widget_tweaks %}
+
+{% block title %}{% trans "Connexion Administrateur" %}{% endblock %}
+
+{% block content %}
+
+<div class="min-h-screen flex flex-col md:flex-row items-center justify-between 
+            bg-gradient-to-br from-gray-900 to-gray-700 text-white px-6 py-16">
+
+    <!-- SECTION BIENVENUE ADMIN -->
+    <div class="flex-1 mb-12 md:mb-0 md:pr-10">
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-4">
+            {% trans "Espace Administrateur" %}
+        </h1>
+        <p class="text-lg md:text-xl max-w-xl leading-relaxed">
+            {% trans "Connectez-vous pour accéder au tableau de bord et gérer la plateforme." %}
+        </p>
+    </div>
+
+    <!-- FORMULAIRE DE CONNEXION ADMIN -->
+    <div class="w-full max-w-md bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-8 text-black dark:text-black">
+
+        <h2 class="text-3xl font-bold text-center mb-6">
+            {% trans "Connexion Admin" %}
+        </h2>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-4 text-center py-2 px-3 rounded-lg 
+                            {% if message.tags == 'error' %}
+                                bg-red-600 text-white
+                            {% elif message.tags == 'success' %}
+                                bg-green-600 text-white
+                            {% else %}
+                                bg-gray-700 text-white
+                            {% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" action="{% url 'admin_panel:login' %}" class="space-y-5">
+            {% csrf_token %}
+
+            <!-- Username -->
+            <div>
+                <label for="username" class="block font-semibold mb-1">
+                    {% trans "Nom d'utilisateur" %}
+                </label>
+                <input type="text" id="username" name="username" required
+                       placeholder="{% trans 'Entrez votre nom' %}"
+                       class="w-full px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 
+                              border border-gray-300 dark:border-gray-600 
+                              focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <!-- Password -->
+            <div>
+                <label for="password" class="block font-semibold mb-1">
+                    {% trans "Mot de passe" %}
+                </label>
+
+                <div class="relative">
+                    <input type="password" id="password" name="password" required
+                           placeholder="{% trans 'Entrez votre mot de passe' %}"
+                           class="w-full px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 
+                                  border border-gray-300 dark:border-gray-600 
+                                  focus:ring-2 focus:ring-blue-500 outline-none">
+
+                    <!-- Icône œil -->
+                    <button type="button"
+                            class="absolute inset-y-0 right-3 flex items-center text-gray-500 dark:text-gray-300 toggle-password"
+                            data-target="password">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                             fill="currentColor" class="bi bi-eye">
+                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8z"/>
+                            <path d="M8 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bouton Connexion -->
+            <button type="submit"
+                    class="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 
+                           text-white font-semibold shadow transition">
+                {% trans "Connexion" %}
+            </button>
+        </form>
+
+    </div>
+</div>
+
+<!-- SCRIPT AFFICHER / MASQUER MOT DE PASSE -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".toggle-password").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const input = document.getElementById(btn.dataset.target);
+            if (!input) return;
+
+            const isHidden = input.type === "password";
+            input.type = isHidden ? "text" : "password";
+
+            btn.innerHTML = isHidden
+                ? `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                        fill="currentColor" class="bi bi-eye-slash">
+                        <path d="M13.359 11.238l1.386 1.386-.708.708-1.386-1.386A7.974 7.974 0 0 1 8 13.5C3.523 13.5-.268 10.557-1.542 6.5c1.274-4.057 5.065-7 9.542-7 1.828 0 3.523.598 4.884 1.585l1.386-1.386.708.708-1.386 1.386a7.975 7.975 0 0 1 1.427 2.557z"/>
+                        <path d="M5.354 5.354a3 3 0 0 0 4.292 4.292L5.354 5.354z"/>
+                    </svg>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                        fill="currentColor" class="bi bi-eye">
+                        <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8z"/>
+                        <path d="M8 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
+                    </svg>`;
+        });
+    });
+});
+</script>
+
+{% endblock %}
+

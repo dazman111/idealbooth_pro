@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 px-4 pb-32">
+
+    <!-- TITRE -->
+    <h2 class="text-3xl font-bold text-primary mb-6">➕ Ajouter un accessoire</h2>
+
+    <!-- RETOUR -->
+    <a href="{% url 'admin_panel:manage_accessories' %}"
+       class="inline-block mb-6 px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition">
+        ⬅ Retour
+    </a>
+
+    <!-- CARD -->
+    <div class="bg-card shadow-xl rounded-xl border border-primary/20 p-6">
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- NOM -->
+            <div>
+                <label class="block font-semibold mb-1">Nom</label>
+                <input type="text" name="{{ form.name.name }}" value="{{ form.name.value }}"
+                       class="w-full px-3 py-2 rounded border border-gray-300 bg-base text-base">
+            </div>
+
+            <!-- PRIX -->
+            <div>
+                <label class="block font-semibold mb-1">Prix (€)</label>
+                <input type="number" step="0.01" name="{{ form.price.name }}" value="{{ form.price.value }}"
+                       class="w-full px-3 py-2 rounded border border-gray-300 bg-base text-base">
+            </div>
+
+            <!-- IMAGE -->
+            <div>
+                <label class="block font-semibold mb-1">Image</label>
+                <input type="file" name="{{ form.image.name }}"
+                       class="w-full px-3 py-2 rounded border border-gray-300 bg-base text-base">
+            </div>
+
+            <!-- ACTIF -->
+            <div class="flex items-center gap-2">
+                <input type="checkbox" name="{{ form.active.name }}" {% if form.active.value %}checked{% endif %}
+                       class="w-5 h-5">
+                <label class="font-semibold">Actif</label>
+            </div>
+
+            <!-- BOUTON -->
+            <button type="submit"
+                    class="px-5 py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700 transition">
+                💾 Enregistrer
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+{% endblock %}

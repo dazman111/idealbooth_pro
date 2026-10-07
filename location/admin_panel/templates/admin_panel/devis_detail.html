@@ -1,0 +1,77 @@
+{% extends "admin_panel/base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
+
+    <h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
+        Devis n° {{ devis.numero }}
+    </h1>
+
+    <!-- Informations entreprise -->
+    <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg mb-6">
+        <h2 class="text-xl font-semibold mb-2">Entreprise</h2>
+
+        <p><strong>Nom :</strong> {{ devis.company_name }}</p>
+        <p><strong>Email :</strong> {{ devis.company_email }}</p>
+        <p><strong>Téléphone :</strong> {{ devis.company_phone }}</p>
+        <p><strong>Adresse :</strong> {{ devis.company_address }}</p>
+        <p><strong>BCE :</strong> {{ devis.company_bce }}</p>
+        <p><strong>TVA :</strong> {{ devis.company_vat_number }}</p>
+    </div>
+
+    <!-- Informations client -->
+    <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg mb-6">
+        <h2 class="text-xl font-semibold mb-2">Client</h2>
+
+        <p><strong>Nom :</strong> {{ devis.client_name }}</p>
+        <p><strong>Adresse :</strong> {{ devis.client_address }}</p>
+        <p><strong>TVA :</strong> {{ devis.client_vat_number }}</p>
+    </div>
+
+
+    <!-- Informations devis -->
+    <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg mb-6">
+        <h2 class="text-xl font-semibold mb-2">Détails du devis</h2>
+
+        <p><strong>Date de création :</strong> {{ devis.date_creation|date:"d/m/Y H:i" }}</p>
+        <p><strong>Description :</strong> {{ devis.description }}</p>
+        <p><strong>Durée :</strong> {{ devis.duree }} jours</p>
+
+        <p><strong>Prix HT :</strong> {{ devis.prix_ht }} €</p>
+        <p><strong>TVA :</strong> {{ devis.tva }} %</p>
+        <p><strong>Prix TTC :</strong> {{ devis.prix_ttc }} €</p>
+
+        <p class="mt-2">
+            <strong>Statut :</strong>
+            {% if devis.status == "pending" %}
+                <span class="text-yellow-500">En attente</span>
+            {% elif devis.status == "accepted" %}
+                <span class="text-green-500">Accepté</span>
+            {% else %}
+                <span class="text-red-500">Refusé</span>
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-between mt-6">
+
+        {% if devis.status == "pending" %}
+            <a href="{% url 'admin_panel:admin_valider_devis' devis.id %}"
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow">
+                Valider le devis
+            </a>
+        {% endif %}
+
+        <a href="{% url 'admin_panel:manage_devis' %}"
+           class="bg-gray-300 hover:bg-gray-400 text-gray-900 px-4 py-2 rounded-lg shadow">
+            Retour
+        </a>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-16 px-6">
+
+    <!-- Titre -->
+    <h1 class="text-5xl font-extrabold mb-12 text-gray-900 tracking-tight">
+        Modifier un photobooth
+    </h1>
+
+    <!-- Formulaire -->
+    <form method="post" enctype="multipart/form-data"
+          class="bg-white shadow-2xl rounded-3xl p-12 space-y-10 border border-gray-100">
+        {% csrf_token %}
+
+        <!-- Champs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 text-lg">
+            {{ form.as_p }}
+        </div>
+
+        <!-- Boutons -->
+        <div class="flex gap-6 pt-4">
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-2xl text-xl font-semibold transition shadow-lg hover:shadow-xl">
+                Enregistrer
+            </button>
+
+            <a href="{% url 'admin_panel:manage_photobooths' %}"
+               class="border border-gray-400 text-gray-700 px-10 py-4 rounded-2xl text-xl hover:bg-gray-100 transition shadow-sm">
+                Annuler
+            </a>
+        </div>
+    </form>
+
+    <!-- Footer -->
+    <footer class="mt-16 text-center text-gray-500 text-base">
+        
+    </footer>
+
+</div>
+{% endblock %}

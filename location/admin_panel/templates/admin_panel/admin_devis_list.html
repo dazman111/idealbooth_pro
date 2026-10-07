@@ -1,0 +1,59 @@
+{% extends "admin_panel/base.html" %}
+
+{% block content %}
+<div class="container py-5">
+
+    <h1 class="fw-bold mb-4">Gestion des devis</h1>
+
+    {% if devis %}
+    <table class="table table-striped shadow-sm">
+        <thead>
+            <tr>
+                <th>Numéro</th>
+                <th>Entreprise</th>
+                <th>Date</th>
+                <th>Montant TTC</th>
+                <th>Statut</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for d in devis %}
+            <tr>
+                <td>{{ d.numero }}</td>
+                <td>{{ d.company_name }}</td>
+                <td>{{ d.date_creation|date:"d/m/Y" }}</td>
+                <td>{{ d.prix_ttc }} €</td>
+
+                <td>
+                    {% if d.status == "accepted" %}
+                        <span class="badge bg-success">Accepté</span>
+                    {% else %}
+                        <span class="badge bg-warning">En attente</span>
+                    {% endif %}
+                </td>
+
+                <td>
+                    <a href="{% url 'accounts:devis_pdf' d.id %}" class="btn btn-primary btn-sm">
+                        PDF
+                    </a>
+
+                    {% if d.status != "accepted" %}
+                    <a href="{% url 'accounts:valider_devis' d.id %}"
+                       class="btn btn-success btn-sm">
+                        Valider
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% else %}
+    <div class="alert alert-warning text-center">Aucun devis trouvé.</div>
+    {% endif %}
+
+</div>
+{% endblock %}

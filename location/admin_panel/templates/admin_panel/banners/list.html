@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto mt-10 px-4 pb-32">
+
+    <div class="flex items-center justify-between mb-8">
+        <a href="{% url 'admin_panel:admin_dashboard' %}"
+           class="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 transition">
+            ⬅ Retour au Dashboard
+        </a>
+
+        <h1 class="text-3xl font-extrabold text-primary">📢 Bannières promotionnelles</h1>
+
+        <a href="{% url 'admin_panel:add_banner' %}"
+           class="px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary/80 transition">
+            ➕ Ajouter une bannière
+        </a>
+    </div>
+
+    <div class="overflow-x-auto bg-card shadow-xl rounded-xl border border-primary/20">
+        <table class="min-w-full text-left text-base">
+            <thead>
+                <tr class="border-b">
+                    <th class="p-3">Message</th>
+                    <th class="p-3">Code promo</th>
+                    <th class="p-3">Début</th>
+                    <th class="p-3">Fin</th>
+                    <th class="p-3">Statut</th>
+                    <th class="p-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for banner in banners %}
+                <tr class="border-b">
+                    <td class="p-3">{{ banner.message }}</td>
+                    <td class="p-3">{{ banner.promo_code|default:"—" }}</td>
+                    <td class="p-3">{{ banner.start_date|date:"d/m/Y H:i" }}</td>
+                    <td class="p-3">{{ banner.end_date|date:"d/m/Y H:i" }}</td>
+                    <td class="p-3">
+                        {% if banner.is_active %}
+                            <span class="px-2 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-700">Active</span>
+                        {% else %}
+                            <span class="px-2 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-600">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-3 space-x-2">
+                        <a href="{% url 'admin_panel:edit_banner' banner.pk %}" class="text-blue-600 hover:underline">Modifier</a>
+                        <form method="post" action="{% url 'admin_panel:delete_banner' banner.pk %}" class="inline" onsubmit="return confirm('Supprimer cette bannière ?');">
+                            {% csrf_token %}
+                            <button type="submit" class="text-red-600 hover:underline">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="p-3 text-center text-gray-500">Aucune bannière pour le moment.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

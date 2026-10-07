@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen pb-20">  <!-- pousse le footer vers le bas -->
+
+    <h1 class="text-3xl font-bold mb-6">📄 Gestion des devis</h1>
+
+    <p class="mb-4">
+        <a href="{% url 'admin_panel:create_devis' %}" 
+        class="px-4 py-2 bg-primary text-white rounded shadow">
+            ➕ Créer un devis
+        </a>
+    </p>
+
+    <table class="w-full border-collapse">
+        <thead>
+            <tr class="bg-gray-200">
+                <th class="p-3">Client</th>
+                <th class="p-3">Date</th>
+                <th class="p-3">Total</th>
+                <th class="p-3">Statut</th>
+                <th class="p-3">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for devis in devis_list %}
+            <tr class="border-b">
+                <td class="p-3">{{ devis.client_name }}</td>
+                <td class="p-3">{{ devis.date_creation|date:"d/m/Y" }}</td>
+                <td class="p-3">{{ devis.prix_ttc }} €</td>
+                <td class="p-3">{{ devis.status }}</td>
+                <td class="p-3">
+                    <a href="{% url 'admin_panel:view_devis' devis.id %}" class="text-blue-600">Voir</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="p-3 text-center text-gray-500">
+                    Aucun devis pour le moment.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+{% endblock %}

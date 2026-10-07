@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: sans-serif; padding: 40px; }
+        h1 { font-size: 28px; }
+        .section { margin-bottom: 25px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        td, th { border: 1px solid #ccc; padding: 8px; }
+    </style>
+</head>
+<body>
+
+<h1>Devis {{ devis.numero }}</h1>
+
+<div class="section">
+    <h3>Entreprise</h3>
+    <p><strong>{{ devis.company_name }}</strong></p>
+    <p>{{ devis.company_address }}</p>
+    <p>TVA : {{ devis.company_vat_number }}</p>
+</div>
+
+<div class="section">
+    <h3>Client</h3>
+    <p>{{ devis.user.username }}</p>
+</div>
+
+<div class="section">
+    <h3>Détails</h3>
+    <p>Description : {{ devis.description }}</p>
+    <p>Durée : {{ devis.duree }} heures</p>
+</div>
+
+<table>
+    <tr>
+        <th>Prix HT</th>
+        <th>TVA</th>
+        <th>Total TTC</th>
+    </tr>
+    <tr>
+        <td>{{ devis.prix_ht }} €</td>
+        <td>{{ devis.tva }} %</td>
+        <td>{{ devis.prix_ttc }} €</td>
+    </tr>
+</table>
+
+</body>
+</html>
