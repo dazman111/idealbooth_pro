@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="container py-5">
+
+    <h1 class="mb-4">{% trans "Politique en matière de cookies" %}</h1>
+
+    <p>{% trans "Cette page explique comment nous utilisons les cookies sur notre site IdealBooth." %}</p>
+
+    <h3 class="mt-4">{% trans "1. Cookies essentiels" %}</h3>
+    <p>{% trans "Ces cookies sont nécessaires au fonctionnement du site et ne peuvent pas être désactivés." %}</p>
+
+    <h3 class="mt-4">{% trans "2. Cookies analytiques" %}</h3>
+    <p>{% trans "Ils nous permettent de mesurer l’audience et d’améliorer l’expérience utilisateur." %}</p>
+
+    <h3 class="mt-4">{% trans "3. Cookies marketing" %}</h3>
+    <p>{% trans "Ils servent à afficher des publicités personnalisées." %}</p>
+
+    <h3 class="mt-4">{% trans "4. Cookies de personnalisation" %}</h3>
+    <p>{% trans "Ils permettent de personnaliser le contenu affiché." %}</p>
+
+    <h3 class="mt-4">{% trans "5. Gestion de vos préférences" %}</h3>
+    <p>{% trans "Vous pouvez modifier vos préférences à tout moment via la bannière ou la modal." %}</p>
+
+</div>
+{% endblock %}
