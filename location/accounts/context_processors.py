@@ -1,4 +1,4 @@
-from .models import Message
+from admin_panel.models import Message
 from rest_framework.authtoken.models import Token
 
 def unread_messages_count(request):

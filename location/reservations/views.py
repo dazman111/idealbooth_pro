@@ -1,7 +1,7 @@
 from rest_framework import viewsets, permissions
 from .models import Reservation
 from .serializers import ReservationSerializer
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from .models import Invoice
@@ -14,6 +14,11 @@ import stripe
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.conf import settings
+from django.shortcuts import render, redirect
+from .forms import ReservationForm
+from django.contrib.auth.decorators import login_required
+from datetime import date
+
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -109,5 +114,57 @@ def stripe_webhook(request):
         invoice.save(update_fields=['payment_status', 'stripe_payment_intent_id'])
 
     return JsonResponse({'status': 'success'})
+
+def create_reservation(request):
+    if request.method == 'POST':
+        form = ReservationForm(request.POST)
+        if form.is_valid():
+            reservation = form.save()
+            selected_accessories = reservation.accessories.all()
+            # tu peux faire quelque chose avec selected_accessories ici
+            return redirect('reservation_success')
+    else:
+        form = ReservationForm()
+
+    return render(request, 'reservations/reservation_form.html', {'form': form})
+    return render(request, 'reservations/reservation_form.html', {
+        'form': form,
+        'photobooth': photobooth
+    })
+
+@login_required
+def cancel_reservation(request, reservation_id):
+    reservation = get_object_or_404(Reservation, id=reservation_id, user=request.user)
+
+    # Option 1 : supprimer la réservation
+    reservation.delete()
+
+    # Option 2 : marquer comme annulée (si tu préfères)
+    # reservation.status = "cancelled"
+    # reservation.save()
+
+    return redirect('user_reservations')  # page où l’utilisateur voit ses réservations
+
+
+@login_required
+def cancel_reservation(request, reservation_id):
+    reservation = get_object_or_404(Reservation, id=reservation_id, user=request.user)
+
+    # 🔒 Empêcher l’annulation si la date est passée
+    if reservation.start_date.date() <= date.today():
+        # Tu peux ajouter un message si tu veux
+        return redirect('user_reservations')
+
+    # 🔥 Annuler la réservation (au choix)
+    # Option 1 : supprimer
+    reservation.delete()
+
+    # Option 2 : marquer comme annulée
+    # reservation.status = "cancelled"
+    # reservation.save()
+
+    return redirect('user_reservations')
+
+
 
 

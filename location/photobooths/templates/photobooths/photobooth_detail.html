@@ -24,6 +24,16 @@
 
         <h3 class="card-title">{{ photobooth.name }}</h3>
         <p class="card-text">{{ photobooth.description }}</p>
+        <h3>Accessoires disponibles</h3>
+
+        {% for acc in accessories %}
+            <div>
+                <img src="{{ acc.image.url }}" alt="{{ acc.name }}" width="120">
+                <p>{{ acc.name }}</p>
+            </div>
+        {% empty %}
+            <p>Aucun accessoire pour ce photobooth.</p>
+        {% endfor %}
 
         <p class="card-text font-bold text-lg">{{ photobooth.price_per_day }} € / jour</p>
         <p>Stock disponible : {{ photobooth.available }}</p>
@@ -62,8 +72,7 @@
             {% else %}
                 <p class="text-red-500">Ce photobooth est indisponible.</p>
             {% endif %}
-
-
+            <h3 class="mt-4 font-bold text-lg">Accessoires disponibles :</h3>
             <!-- Bouton Favori -->
             <div class="mt-4">
                 {% if is_favorite %}
@@ -80,7 +89,7 @@
             </div>
 
         {% else %}
-            <a href="{% url 'login' %}" class="btn btn-warning btn-lg w-100 rounded-pill mt-3">
+            <a href="{% url 'accounts:login' %}" class="btn btn-warning btn-lg w-100 rounded-pill mt-3">
                 Connectez-vous pour réserver
             </a>
         {% endif %}

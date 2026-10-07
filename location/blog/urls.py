@@ -2,8 +2,12 @@ from django.urls import path
 from . import views
 
 
+app_name = "blog"
+
+
 urlpatterns = [
-    path('', views.blog_home, name='blog_home'),
+    path("", views.blog_home, name="blog_home"),
+    path("add/", views.add_article, name="add_article"),
 
     # Admin blog
     path('admin/manage/', views.manage_blog, name='manage_blog'),

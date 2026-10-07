@@ -4,13 +4,13 @@ from . import views
 urlpatterns = [
     # Panier
     path('', views.cart_detail, name='cart_detail'),
-    path('panier/ajouter/<int:photobooth_id>/', views.add_to_cart, name='add_to_cart'),
+    path('ajouter/<int:photobooth_id>/', views.add_to_cart, name='add_to_cart'),
     path('remove/<int:item_id>/', views.remove_from_cart, name='remove_from_cart'),
     path('update-item/<int:item_id>/', views.update_cart_item, name='update_cart_item'),
     path('api/cart/count/', views.get_cart_item_count, name='get_cart_item_count'),
 
     # Coupons
-    path('appliquer-coupon/', views.apply_coupon, name='apply_coupon'),
+    path('appliquer/', views.apply_coupon, name='apply_coupon'),
     path('remove-coupon/', views.remove_coupon, name='remove_coupon'),
 
     # Confirmation panier

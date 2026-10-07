@@ -42,111 +42,69 @@ User = get_user_model()
 # -------------------------
 # Fonctions de gestion du panier
 # -------------------------
-
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Photobooth
 @login_required
 def add_to_cart(request, photobooth_id):
     photobooth = get_object_or_404(Photobooth, id=photobooth_id)
-
-    if request.method != "POST":
-        return JsonResponse({"success": False, "message": "Requête invalide."}, status=200)
-
-    try:
-        quantite = int(request.POST.get('quantite', 1))
-        if quantite <= 0:
-            raise ValueError
-    except ValueError:
-        return JsonResponse({"success": False, "message": "Quantité invalide."}, status=200)
-
-    try:
-        start_date = datetime.strptime(request.POST.get('start_date'), '%Y-%m-%d').date()
-        end_date = datetime.strptime(request.POST.get('end_date'), '%Y-%m-%d').date()
-    except (ValueError, TypeError):
-        return JsonResponse({"success": False, "message": "Dates invalides ou manquantes."}, status=200)
-
-    if end_date < start_date:
-        return JsonResponse({"success": False, "message": "La date de fin doit être après la date de début."}, status=200)
-    if start_date < date.today():
-        return JsonResponse({"success": False, "message": "La date de début ne peut pas être dans le passé."}, status=200)
-
-    # Vérification du stock
-    total_reserved = Reservation.objects.filter(
-        photobooth=photobooth,
-        start_date__lte=end_date,
-        end_date__gte=start_date,
-        status=Reservation.CONFIRMED
-    ).aggregate(total=Sum('quantity'))['total'] or 0
-
-    existing_item = CartItem.objects.filter(
-        cart__user=request.user,
-        photobooth=photobooth,
-        start_date=start_date,
-        end_date=end_date
-    ).first()
-    user_existing_qty = existing_item.quantite if existing_item else 0
-
-    total_in_other_carts = CartItem.objects.filter(
-        photobooth=photobooth,
-        start_date__lte=end_date,
-        end_date__gte=start_date
-    ).exclude(cart__user=request.user).aggregate(total=Sum('quantite'))['total'] or 0
-
-    disponible = photobooth.stock - total_reserved - total_in_other_carts
-    if disponible <= 0:
-        return JsonResponse({"success": False, "message": "Ce photobooth est indisponible pour ces dates."}, status=200)
-
-    max_possible = disponible - user_existing_qty
-    if quantite > max_possible:
-        if max_possible <= 0:
-            return JsonResponse({"success": False, "message": "Aucune unité supplémentaire disponible."}, status=200)
-        quantite = max_possible
-        msg = f"Seules {quantite} unité(s) ont été ajoutées en raison du stock limité."
-    else:
-        msg = "Article ajouté au panier avec succès !"
-
     cart, _ = Cart.objects.get_or_create(user=request.user)
+
+    start_date = request.POST.get("start_date")
+    end_date = request.POST.get("end_date")
+    quantite = int(request.POST.get("quantite", 1))
+
+    # Vérifie si le photobooth est déjà dans le panier
     cart_item, created = CartItem.objects.get_or_create(
         cart=cart,
         photobooth=photobooth,
-        start_date=start_date,
-        end_date=end_date,
-        defaults={'quantite': quantite}
+        defaults={'quantite': quantite, 'start_date': start_date, 'end_date': end_date}
     )
-
     if not created:
         cart_item.quantite += quantite
+        cart_item.start_date = start_date
+        cart_item.end_date = end_date
         cart_item.save()
-        msg = f"Quantité mise à jour à {cart_item.quantite} dans votre panier."
 
-    # Calcul du nombre total d'articles dans le pa
-    # Vérifie si la requête est AJAX
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        # c’est AJAX → on renvoie du JSON
-        cart_count = CartItem.objects.filter(cart=cart).aggregate(total=Sum('quantite'))['total'] or 0
-        return JsonResponse({
-            "success": True,
-            "message": msg,
-            "cart_count": cart_count
-        }, status=200)
+    # Quantité totale et prix total
+    cart_count = cart.get_total_quantity()
+    total_price = float(cart.get_total_price())  # float pour JSON
 
-    # sinon, ce n’est pas AJAX → redirige vers la page HTML
-    # sinon, si ce n’est pas AJAX, on reste sur la page photobooth avec message
-    messages.success(request, msg)
-    return redirect(request.META.get('HTTP_REFERER', 'photobooths'))
-
+    return JsonResponse({
+        "cart_count": cart_count,
+        "total_price": total_price
+    })
 
 @login_required
 def remove_from_cart(request, item_id):
     item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
     item.delete()
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        cart = Cart.objects.get(user=request.user)
+        subtotal = cart.get_subtotal_price()
+        total = cart.get_total_price()
+        cart_count = cart.items.aggregate(total=Sum('quantite'))['total'] or 0
+
+        return JsonResponse({
+            "success": True,
+            "message": "Article retiré du panier.",
+            "subtotal": subtotal,
+            "total_final": total,
+            "cart_count": cart_count,
+            "empty_cart": cart_count == 0
+        }, status=200)
+
     messages.info(request, "Article retiré du panier.")
     return redirect('cart_detail')
 
 
 @login_required
 def update_cart_item(request, item_id):
+    print("POST DATA:", request.POST)
     item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
 
-    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+    if request.method == 'POST':
         try:
             quantite = int(request.POST.get('quantite', 1))
             type_evenement = request.POST.get('type_evenement', 'mariage')
@@ -154,13 +112,21 @@ def update_cart_item(request, item_id):
             start_date_str = request.POST.get('start_date')
             end_date_str = request.POST.get('end_date')
 
+            option_id = request.POST.get('option_id')
+            option = None
+            if option_id:
+                option = get_object_or_404(PhotoboothOption, id=option_id, photobooth=item.photobooth)
+
+            # Gestion des dates
             if start_date_str and end_date_str:
-                new_start_dt = datetime.strptime(start_date_str, "%Y-%m-%d")
-                new_end_dt = datetime.strptime(end_date_str, "%Y-%m-%d")
-                new_end_dt = new_end_dt.replace(hour=23, minute=59, second=59)
+                try:
+                    new_start_dt = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                    new_end_dt = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+                except ValueError:
+                    return JsonResponse({"success": False, "message": "Format de date invalide."}, status=400)
 
                 if new_end_dt < new_start_dt:
-                    return JsonResponse({'success': False, 'error': "La date de fin ne peut pas être antérieure à la date de début."})
+                    return JsonResponse({"success": False, "message": "La date de fin ne peut pas être antérieure à la date de début."}, status=400)
 
                 conflit_reservation = Reservation.objects.filter(
                     photobooth=item.photobooth,
@@ -171,29 +137,49 @@ def update_cart_item(request, item_id):
                 conflit_cartitem = CartItem.objects.filter(
                     cart=item.cart,
                     photobooth=item.photobooth,
-                    start_date__lte=new_end_dt.date(),
-                    end_date__gte=new_start_dt.date()
+                    start_date__lte=new_end_dt,
+                    end_date__gte=new_start_dt
                 ).exclude(id=item.id).exists()
 
                 if conflit_reservation or conflit_cartitem:
-                    return JsonResponse({'success': False, 'error': "Ce photobooth est déjà réservé sur cette période."})
+                    return JsonResponse({"success": False, "message": "Ce photobooth est déjà réservé sur cette période."}, status=400)
 
-                item.start_date = new_start_dt.date()
-                item.end_date = new_end_dt.date()
+                item.start_date = new_start_dt
+                item.end_date = new_end_dt
 
+            # Mise à jour des autres champs
             item.quantite = quantite
             item.type_evenement = type_evenement
+            item.option = option
             item.save()
 
-            # Renvoie le nouveau nombre d'articles dans le panier
-            cart_count = item.cart.items.count
+            return JsonResponse({
+            "success": True,
+            "message": "Article mis à jour avec succès.",
+            "item_id": item.id,
+            "quantite": item.quantite,
+            "type_evenement": item.type_evenement,
+            "start_date": item.start_date.strftime("%Y-%m-%d") if item.start_date else None,
+            "end_date": item.end_date.strftime("%Y-%m-%d") if item.end_date else None,
+            "option": item.option.nom if item.option else None,
 
-            return JsonResponse({'success': True, 'cart_count': cart_count, 'message': "Article mis à jour avec succès."})
-        except (ValueError, TypeError) as e:
-            return JsonResponse({'success': False, 'error': f"Erreur lors de la mise à jour de l’article : {str(e)}"})
+            # Sous-total de la ligne
+            "subtotal": float(item.subtotal) if hasattr(item, "subtotal") else float(item.cart.get_subtotal_price()),
 
-    # Si pas POST ou pas AJAX
-    return JsonResponse({'success': False, 'error': 'Requête invalide.'})
+            # Sous-total global (ce que ton JS attend)
+            "subtotal_global": float(item.cart.get_subtotal_price()),
+
+            # Total final (avec ou sans coupon)
+            "total_final": float(item.cart.get_total_price()),
+
+        }, status=200)
+
+
+        except Exception as e:
+            print("Erreur update_cart_item:", e)
+            return JsonResponse({"success": False, "message": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "message": "Méthode non autorisée."}, status=405)
 
 @login_required
 def cart_detail(request):
@@ -301,7 +287,7 @@ def create_checkout_session(request):
                 customer_email=user.email,
                 line_items=line_items,
                 mode='payment',
-                success_url=request.build_absolute_uri(reverse('checkout_success')),
+                success_url = request.build_absolute_uri(reverse('checkout_success')) + "?session_id={CHECKOUT_SESSION_ID}",
                 cancel_url=request.build_absolute_uri('/panier/'),
                 metadata={'invoice_id': str(invoice.id)},
             )
@@ -389,13 +375,26 @@ def stripe_webhook(request):
 
     return HttpResponse(status=200)
 
-
 @login_required
 def checkout_success(request):
     """
     Vue appelée après redirection vers success_url (après paiement).
-    On vide le panier côté session utilisateur (déjà géré au webhook mais on double-check ici).
+    On vérifie Stripe, puis on vide le panier.
     """
+
+    # 1. Récupérer la session Stripe
+    session_id = request.GET.get("session_id")
+    if session_id:
+        session = stripe.checkout.Session.retrieve(session_id)
+
+        # 2. Si Stripe confirme le paiement → on marque stripe_paid = True
+        if session.payment_status == "paid":
+            invoice_id = session.metadata.get("invoice_id")
+            invoice = Invoice.objects.get(id=invoice_id)
+            invoice.stripe_paid = True   # <-- C’est ici !
+            invoice.save()
+
+    # 3. Ton code actuel pour vider le panier
     try:
         cart = Cart.objects.filter(user=request.user).first()
         if cart:
@@ -437,23 +436,20 @@ def payment_success(request):
 # -------------------------
 # Gestion des coupons (AJAX)
 # -------------------------
-
 @require_POST
 def apply_coupon(request):
     code = request.POST.get("code", "").strip()
-    current_subtotal = request.POST.get("current_subtotal")
 
-    # Convertir proprement
-    try:
-        current_subtotal = float(current_subtotal)
-    except:
-        current_subtotal = 0.00
+    # Récupérer le panier de l'utilisateur
+    cart = Cart.objects.get(user=request.user)
 
     if not code:
         return JsonResponse({
             "success": False,
             "message": "Veuillez entrer un code promo.",
-            "subtotal": current_subtotal
+            "subtotal": float(cart.get_subtotal_price()),
+            "discount_amount": 0,
+            "total_final": float(cart.get_total_price())
         })
 
     # Chercher le coupon
@@ -463,7 +459,9 @@ def apply_coupon(request):
         return JsonResponse({
             "success": False,
             "message": "Code promo invalide.",
-            "subtotal": current_subtotal
+            "subtotal": float(cart.get_subtotal_price()),
+            "discount_amount": 0,
+            "total_final": float(cart.get_total_price())
         })
 
     # Vérifier validité
@@ -471,25 +469,31 @@ def apply_coupon(request):
         return JsonResponse({
             "success": False,
             "message": "Ce code promo n'est plus valide.",
-            "subtotal": current_subtotal
+            "subtotal": float(cart.get_subtotal_price()),
+            "discount_amount": 0,
+            "total_final": float(cart.get_total_price())
         })
 
-    # Calcul réduction
-    remise = float(coupon.apply_discount(current_subtotal))
-    new_total = current_subtotal - remise
+    # ⚡ Associer le coupon au panier
+    cart.coupon = coupon
+    cart.save()
+
+    # Calcul réduction via ton modèle Cart
+    remise = float(cart.get_discount())
+    new_total = float(cart.get_total_price())
 
     # Renvoie toutes les infos utiles au JS
     return JsonResponse({
         "success": True,
-        "message": "Code appliqué avec succès.",
+        "message": "Coupon appliqué avec succès.",
         "coupon_code": coupon.code,
         "discount_type": coupon.discount_type,      # "percent" ou "fixed"
-        "discount_value": float(coupon.discount_value),  # ex : 10
-        "discount_amount": remise,                 # ex : 52.50
-        "subtotal": current_subtotal,
-        "total": new_total
+        "discount_value": float(coupon.discount_value),
+        "discount_amount": remise,                 # ex : 35.00
+        "subtotal": float(cart.get_subtotal_price()),
+        "total_final": new_total
     })
-
+        
 
 @login_required
 def remove_coupon(request):
@@ -499,19 +503,9 @@ def remove_coupon(request):
     messages.info(request, "Le code promo a été retiré.")
     return redirect('cart_detail')
 
-
-def get_cart_item_count(request):
-    if request.user.is_authenticated:
-        cart, _ = Cart.objects.get_or_create(user=request.user)
-        count = cart.items.count()
-    else:
-        count = 0
-    return JsonResponse({'count': count})
-
 def get_cart_item_count(request):
     if request.user.is_authenticated:
         count = CartItem.objects.filter(user=request.user).count()
     else:
         count = 0
     return JsonResponse({'count': count})
-

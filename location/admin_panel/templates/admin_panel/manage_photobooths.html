@@ -21,30 +21,32 @@
                     <p class="text-muted">Prix : {{ booth.price_per_day }} €</p>
 
                     <p>
-                        ✅ Disponible en ligne : 
-                        {% if booth.available > 0 %}
-                            <span class="text-success">{{ booth.available }}</span>
-                        {% else %}
-                            <span class="text-danger">Indisponible</span>
-                        {% endif %}
+                        ✅ Disponible en ligne :
+                        <span class="available-count">
+                            {% if booth.available > 0 %}
+                                <span class="text-success">{{ booth.available }}</span>
+                            {% else %}
+                                <span class="text-danger">Indisponible</span>
+                            {% endif %}
+                        </span>
                         <br>
-                        📦 En stock : {{ booth.stock }}
+                        📦 En stock : <span class="stock-count">{{ booth.stock }}</span>
                     </p>
 
-                    <!-- Bouton Restocker (+1 en stock) -->
-                    <form method="post" action="{% url 'admin_panel:restock_photobooth' booth.pk %}" style="display:inline;">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="stock">
-                        <button type="submit" class="btn btn-sm btn-primary">➕ Restocker</button>
-                    </form>
+                    <!-- Bouton Restocker -->
+                    <button class="btn btn-sm btn-primary restock-btn"
+                            data-url="{% url 'admin_panel:restock_photobooth' booth.pk %}"
+                            data-action="stock">
+                        ➕ Restocker
+                    </button>
 
-                    <!-- Bouton Remettre en ligne (si stock > 0) -->
+                    <!-- Bouton Remettre en ligne -->
                     {% if booth.stock > 0 %}
-                    <form method="post" action="{% url 'admin_panel:restock_photobooth' booth.pk %}" style="display:inline;">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="online">
-                        <button type="submit" class="btn btn-sm btn-success">🌐 Remettre en ligne</button>
-                    </form>
+                    <button class="btn btn-sm btn-success restock-btn"
+                            data-url="{% url 'admin_panel:restock_photobooth' booth.pk %}"
+                            data-action="online">
+                        🌐 Remettre en ligne
+                    </button>
                     {% endif %}
 
                     <div class="d-flex justify-content-between mt-3">
@@ -64,4 +66,62 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- AJAX SCRIPT -->
+<script>
+// Récupération CSRF depuis les cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const csrftoken = getCookie("csrftoken");
+    const buttons = document.querySelectorAll(".restock-btn");
+
+    buttons.forEach(btn => {
+        btn.addEventListener("click", function () {
+            const url = this.dataset.url;
+            const action = this.dataset.action;
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrftoken,
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `action=${action}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const card = btn.closest(".card-body");
+
+                    // Mise à jour du stock
+                    card.querySelector(".stock-count").innerText = data.stock;
+
+                    // Mise à jour du disponible
+                    const availableSpan = card.querySelector(".available-count");
+                    if (data.available > 0) {
+                        availableSpan.innerHTML = `<span class="text-success">${data.available}</span>`;
+                    } else {
+                        availableSpan.innerHTML = `<span class="text-danger">Indisponible</span>`;
+                    }
+                }
+            });
+        });
+    });
+});
+</script>
+
 {% endblock %}

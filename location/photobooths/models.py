@@ -16,6 +16,9 @@ class Photobooth(models.Model):
     )
     available = models.PositiveIntegerField(default=3)  # nombre dispo actuel
 
+    accessories = models.ManyToManyField("Accessory", blank=True)
+
+
     def save(self, *args, **kwargs):
     # Lors de la création, initialiser available = stock si ce n’est pas défini
         if not self.pk:
@@ -64,6 +67,8 @@ class Photobooth(models.Model):
 class Accessory(models.Model):
     name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    description = models.TextField(blank=True) 
+    image = models.ImageField(upload_to='accessories/', blank=True, null=True) 
 
     def __str__(self):
         return self.name

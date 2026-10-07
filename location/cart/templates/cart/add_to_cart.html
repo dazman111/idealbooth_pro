@@ -5,7 +5,8 @@
   <h2>{% trans "Ajouter" %} {{ photobooth.nom }} {% trans "au panier" %}</h2>
   <p><strong>Prix :</strong> {{ photobooth.prix }} €</p>
 
-  <form method="post">
+  <form method="post" action="{% url 'add_to_cart' photobooth.id %}" class="add-to-cart-form">
+    
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">{% trans "Ajouter au panier" %}</button>

@@ -19,15 +19,17 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Photobooth
 from .serializers import PhotoboothSerializer
 
-
 from django.shortcuts import render
 from django.db.models import Q
 from django.core.paginator import Paginator
 from datetime import date
-# IMPORTANT : Assurez-vous d'importer votre modèle et votre fonction date.
-# Exemple d'importation (adaptez selon la structure de votre projet) :
-# from .models import Photobooth 
-# from datetime import date # déjà présente
+from cart.models import Cart, CartItem
+
+
+
+class PhotoboothViewSet(viewsets.ModelViewSet):
+    queryset = Photobooth.objects.all()
+    serializer_class = PhotoboothSerializer
 
 def photobooth_list(request):
     # 1. Récupération des paramètres de filtrage et de pagination
@@ -84,18 +86,23 @@ def photobooth_list(request):
     return render(request, "photobooths/photobooth_list.html", context)
 
 
-
 def photobooth_detail(request, pk):
     photobooth = get_object_or_404(Photobooth, pk=pk)
+
+    # Récupérer les accessoires liés
+    accessories = photobooth.admin_accessories.all()
+
     form = AddToCartForm()
 
-     # Vérifier si ce photobooth est déjà en favoris
+    # Vérifier si ce photobooth est déjà en favoris
     is_favorite = False
     if request.user.is_authenticated:
         is_favorite = Favorite.objects.filter(user=request.user, photobooth=photobooth).exists()
 
+    # Récupérer les réservations confirmées
+    reservations = Reservation.objects.filter(photobooth=photobooth, status="confirmed")
 
-    reservations = Reservation.objects.filter(photobooth=photobooth)
+    # Construire la liste des dates désactivées
     disabled_dates = []
     for reservation in reservations:
         current_date = reservation.start_date
@@ -103,13 +110,28 @@ def photobooth_detail(request, pk):
             disabled_dates.append(current_date.strftime('%Y-%m-%d'))
             current_date += timedelta(days=1)
 
-    return render(request, 'photobooths/photobooth_detail.html', {
-        'photobooth': photobooth,
-        'form': form,
-        'disabled_dates': disabled_dates,
-        'today': date.today(),  # ← ajoute ça ici
-        'is_favorite': is_favorite, 
+    return render(request, "photobooths/photobooth_detail.html", {
+        "photobooth": photobooth,
+        "form": form,
+        "disabled_dates": disabled_dates,
+        "today": date.today(),
+        "is_favorite": is_favorite,
+        "accessories": accessories
     })
+
+def edit_photobooth(request, pk):
+    photobooth = get_object_or_404(Photobooth, pk=pk)
+
+    if request.method == "POST":
+        form = PhotoboothForm(request.POST, request.FILES, instance=photobooth)
+        if form.is_valid():
+            form.save()
+            return redirect("manage_photobooths") 
+    else:
+        form = PhotoboothForm(instance=photobooth)
+
+    return redirect("manage_photobooths")
+
 
 
 @login_required
@@ -185,34 +207,49 @@ def add_photobooth(request):
         form = PhotoboothForm()
     return render(request, 'photobooths/add_photobooth.html', {'form': form})
 
+@login_required
 def add_to_cart(request, photobooth_id):
-    if request.method == 'POST':
-        date_str = request.POST.get('date')
-        photobooth = get_object_or_404(Photobooth, pk=photobooth_id)
+    print("🟢 add_to_cart appelé")
 
-        selected_date = parse_date(date_str)
-        if not selected_date:
-            messages.error(request, "Date invalide.")
-            return redirect('photobooth_list')
-
-        cart = request.session.get('cart', [])
-
-        # Optionnel : vérifier si cet item existe déjà
-        for item in cart:
-            if item['photobooth_id'] == photobooth.id and item['date'] == date_str:
-                messages.warning(request, "Ce photobooth est déjà dans votre panier pour cette date.")
-                return redirect('photobooth_list')
-
-        cart.append({
-            "photobooth_id": photobooth.id,
-            "name": photobooth.name,
-            "price": float(photobooth.price),
-            "date": date_str,
-            "image_url": photobooth.image.url if photobooth.image else '/static/img/default.jpg'
-        })
-        request.session['cart'] = cart
-        messages.success(request, f"{photobooth.name} ajouté au panier pour le {date_str}.")
+    if request.method != "POST":
         return redirect('photobooth_list')
+
+    start_date_str = request.POST.get('start_date')
+    end_date_str = request.POST.get('end_date')
+    quantite = int(request.POST.get('quantite', 1))
+    type_evenement = request.POST.get('type_evenement', 'mariage') 
+
+    photobooth = get_object_or_404(Photobooth, pk=photobooth_id)
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+
+    start_date = parse_date(start_date_str)
+    end_date = parse_date(end_date_str)
+
+    existing_item = CartItem.objects.filter(
+        cart=cart,
+        photobooth=photobooth,
+        start_date=start_date,
+        end_date=end_date,
+        type_evenement=type_evenement
+    ).first()
+
+    if existing_item:
+        messages.warning(request, "Déjà dans le panier")
+        return redirect('cart_detail')
+
+    item = CartItem.objects.create(
+        cart=cart,
+        photobooth=photobooth,
+        start_date=start_date,
+        end_date=end_date,
+        quantite=quantite,
+        type_evenement=type_evenement
+    )
+
+    messages.success(request, "Ajouté au panier")
+    return redirect('cart_detail')
+
+
     
 class PhotoboothViewSet(viewsets.ModelViewSet):
     queryset = Photobooth.objects.all()
@@ -287,7 +324,6 @@ def toggle_favorite(request, pk):
         Favorite.objects.create(user=request.user, photobooth=photobooth)
         status_msg = "added"
 
-    # Toujours 200 — aucune redirection
     return render(
         request,
         "accounts/user_favorites_toggle.html",

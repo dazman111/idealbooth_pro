@@ -20,6 +20,9 @@
    <link rel="shortcut icon" href="/static/images/favicon.ico" type="image/x-icon">
    <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png">
    <link rel="manifest" href="/static/images/site.webmanifest">
+   <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+
+   
 
    <style>
     :root {
@@ -203,78 +206,71 @@
         }
     }
 </style>
+
 </head>
 <body>
-
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-light shadow-sm">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+        <a class="navbar-brand d-flex align-items-center" href="/{{ LANGUAGE_CODE }}/">
             <img src="{% static 'images/logo11.png' %}" alt="logo" class="me-2">
             <span>IdealBooth</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto align-items-center">
-                <li class="nav-item"><a class="nav-link" href="/">{% trans "Accueil" %}</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">{% trans "Accueil" %}</a></li>
                 <li class="nav-item"><a class="nav-link" href="{% url 'photobooth_list' %}">{% trans "Photobooths" %}</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'blog_home' %}">{% trans "Blog" %}</a></li>
-                <ul class="navbar-nav ms-auto align-items-center">
-                    <!-- tes liens Accueil, Photobooths, Blog... -->
+                <li class="nav-item"><a class="nav-link" href="{% url 'blog:blog_home' %}">{% trans "Blog" %}</a></li>
 
-                    {% if user.is_authenticated %}
-                        {% if user.is_staff or user.is_superuser %}
-                            <li class="nav-item">
-                                <a href="{% url 'admin_dashboard' %}" class="btn btn-sm btn-outline-danger ms-2">Admin</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-danger" href="{% url 'logout' %}">Déconnexion</a>
-                            </li>
-                        {% else %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'user_dashboard' %}">Compte</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'user_messages' %}">
-                                    Messages
-                                    {% if unread_messages_count > 0 %}
-                                        <span class="badge bg-danger rounded-circle">{{ unread_messages_count }}</span>
-                                    {% endif %}
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-danger" href="{% url 'logout' %}">Déconnexion</a>
-                            </li>
-                        {% endif %}
+                <!-- Panier -->
+                <li class="nav-item cart-icon position-relative">
+                    <a href="{% url 'cart_detail' %}" class="text-dark" style="font-size: 1.5rem;">
+                        <i class="fa-solid fa-shopping-basket"></i>
+                        <span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {{ cart_count }}
+                        </span>
+                    </a>
+                </li>
+
+                {% if user.is_authenticated %}
+                    {% if user.is_staff or user.is_superuser %}
+                        <li class="nav-item"><a href="{% url 'admin_panel:admin_dashboard' %}" class="btn btn-sm btn-outline-danger ms-2">{% trans "Admin" %}</a></li>
+                        <li class="nav-item"><a class="nav-link text-danger" href="{% url 'admin_panel:logout' %}">{% trans "Déconnexion" %}</a></li>
                     {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Connexion</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Inscription</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'accounts:user_dashboard' %}">{% trans "Compte" %}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'accounts:user_messages' %}">Messages
+                            {% if unread_messages_count > 0 %}<span class="badge bg-danger rounded-circle">{{ unread_messages_count }}</span>{% endif %}
+                        </a></li>
+                        <li class="nav-item"><a class="nav-link text-danger" href="{% url 'accounts:logout' %}">{% trans "Déconnexion" %}</a></li>
                     {% endif %}
+                {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">{% trans "Connexion" %}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'accounts:register' %}">{% trans "Inscription" %}</a></li>
+                {% endif %}
 
-                    <!-- Choix de langue -->
-                    <li class="nav-item ms-3">
-                        <form action="/i18n/setlang/" method="post" class="d-flex align-items-center">
-                            {% csrf_token %}
-                            {% get_current_language as LANGUAGE_CODE %}
-                            {% get_available_languages as LANGUAGES %}
-                            <select name="language" onchange="this.form.submit()" class="form-select form-select-sm">
-                                {% for lang_code, lang_name in LANGUAGES %}
-                                    <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>
-                                        {{ lang_name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </form>
-                   </li>
-              </ul>
+                <!-- Choix langue -->
+                <li class="nav-item ms-3">
+                    <form action="{% url 'set_language' %}" method="post" class="d-flex align-items-center">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        {% get_current_language as LANGUAGE_CODE %}
+                        {% get_available_languages as LANGUAGES %}
+                        <select name="language" onchange="this.form.submit()" class="form-select form-select-sm">
+                            {% for lang_code, lang_name in LANGUAGES %}
+                                <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>{{ lang_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </li>
+            </ul>
         </div>
     </div>
 </nav>
 
-<!-- Messages -->
+<!-- Messages Django -->
 <div class="container mt-3">
     {% if messages %}
         {% for message in messages %}
@@ -285,57 +281,19 @@
         {% endfor %}
     {% endif %}
 </div>
+
+<!-- Bannière promo -->
 {% if promo_banners and not request.user.is_staff %}
-  {% for banner in promo_banners %}
-    <div id="promo-banner-{{ forloop.counter }}" class="alert alert-warning text-center sticky-top mb-0" style="z-index: 9999;">
-      {{ banner.message }}
-      {% if banner.promo_code %}
-        <button class="btn btn-sm btn-dark ms-2" onclick="copyPromoCode('{{ banner.promo_code }}')">
-          Copier le code : {{ banner.promo_code }}
-        </button>
-      {% endif %}
-      <button type="button" class="close ms-3" onclick="hidePromoBanner('promo-banner-{{ forloop.counter }}')">
-        <span aria-hidden="true">&times;</span>
-      </button>
-    </div>
-  {% endfor %}
-  <script>
-    function copyPromoCode(code) {
-      navigator.clipboard.writeText(code).then(() => {
-        const toast = document.createElement('div');
-        toast.textContent = `Code copié : ${code}`;
-        toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
-        toast.style.right = '20px';
-        toast.style.background = '#e52e71';
-        toast.style.color = '#fff';
-        toast.style.padding = '10px 15px';
-        toast.style.borderRadius = '25px';
-        toast.style.boxShadow = '0 4px 12px rgba(229, 46, 113, 0.6)';
-        toast.style.zIndex = 11000;
-        toast.style.fontWeight = '600';
-        toast.style.userSelect = 'none';
-        document.body.appendChild(toast);
-        setTimeout(() => {
-          toast.style.transition = 'opacity 0.5s ease';
-          toast.style.opacity = '0';
-          setTimeout(() => toast.remove(), 500);
-        }, 2000);
-      });
-    }
-
-    function hidePromoBanner(id) {
-      const banner = document.getElementById(id);
-      if (banner) {
-        banner.style.transition = 'opacity 0.5s ease';
-        banner.style.opacity = '0';
-        setTimeout(() => banner.style.display = 'none', 500);
-        sessionStorage.setItem(id + '_closed', '1');
-      }
-    }
-  </script>
+    {% for banner in promo_banners %}
+        <div id="promo-banner-{{ forloop.counter }}" class="alert alert-warning text-center sticky-top mb-0" style="z-index: 9999;">
+            {{ banner.message }}
+            {% if banner.promo_code %}
+                <button class="btn btn-sm btn-dark ms-2" onclick="copyPromoCode('{{ banner.promo_code }}')">Copier le code : {{ banner.promo_code }}</button>
+            {% endif %}
+            <button type="button" class="close ms-3" onclick="hidePromoBanner('promo-banner-{{ forloop.counter }}')"><span aria-hidden="true">&times;</span></button>
+        </div>
+    {% endfor %}
 {% endif %}
-
 
 <!-- Contenu principal -->
 <main class="container my-4">
@@ -349,112 +307,95 @@
         <p>
             <a href="{% url 'mentions_legales' %}" class="text-light">{% trans "Mentions légales" %}</a> | 
             <a href="{% url 'politique_confidentialite' %}" class="text-light">{% trans "Politique de confidentialité" %}</a>
-
         </p>
-        <!-- Réseaux sociaux -->
         <div class="social-icons mt-3">
-            <a href="https://www.facebook.com/tonprofil" target="_blank" rel="noopener" aria-label="Facebook">
-                <i class="fab fa-facebook-f"></i>
-            </a>
-            <a href="https://www.instagram.com/tonprofil" target="_blank" rel="noopener" aria-label="Instagram">
-                <i class="fab fa-instagram"></i>
-            </a>
-            <a href="https://twitter.com/tonprofil" target="_blank" rel="noopener" aria-label="Twitter">
-                <i class="fab fa-twitter"></i>
-            </a>
+            <a href="https://www.facebook.com/tonprofil" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="https://www.instagram.com/tonprofil" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="https://twitter.com/tonprofil" target="_blank" rel="noopener" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
         </div>
     </div>
 </footer>
-<!-- JS -->
+
+<!-- Toast ajout panier -->
+<div id="add-to-cart-toast" class="alert alert-success" style="display:none; position:fixed; top:90px; right:20px; z-index:11000;">Article ajouté au panier 🛒</div>
+
+<!-- JS Bootstrap -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Script pour gérer le CSRF token -->
-<script>
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== "") {
-            const cookies = document.cookie.split(";");
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + "=")) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    const csrftoken = getCookie("csrftoken");
-</script>
-
-<!-- Script Stripe avec CSRF sécurisé -->
+<!-- CSRF -->
 {% block scripts %}
 <script src="https://js.stripe.com/v3/"></script>
 <script>
-    const stripe = Stripe("{{ STRIPE_PUBLIC_KEY }}");
+const stripe = Stripe("{{ STRIPE_PUBLIC_KEY }}");
 
-    document.getElementById("checkout-button")?.addEventListener("click", function () {
-        fetch("{% url 'create_checkout_session' %}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrftoken,
-            },
-            credentials: "include"
-        })
-        .then(response => response.json())
-        .then(session => {
-            if (session.error) {
-                alert(session.error);
-            } else {
-                stripe.redirectToCheckout({ sessionId: session.id });
-            }
-        })
-        .catch(error => console.error("Erreur :", error));
-    });
-</script>
-<script>
-function addToCartAjax(photoboothId) {
-    const formData = new FormData();
-    formData.append("quantite", 1);  // tu peux adapter
-    formData.append("start_date", document.getElementById("start_date").value);
-    formData.append("end_date", document.getElementById("end_date").value);
-
-    fetch(`/cart/add/${photoboothId}/`, {
+// Checkout Stripe
+document.getElementById("checkout-button")?.addEventListener("click", function () {
+    fetch("{% url 'create_checkout_session' %}", {
         method: "POST",
         headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie('csrftoken')
         },
-        body: formData
+        credentials: "include"
     })
     .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Mettre à jour le badge du panier
-            document.getElementById("cart-count").textContent = data.cart_count;
-        }
-        alert(data.message);
-    })
-    .catch(error => console.error("Erreur:", error));
-}
+    .then(session => {
+        if (!session.error) stripe.redirectToCheckout({ sessionId: session.id });
+    });
+});
 
-// Helper pour CSRF Django
+// Fonction pour récupérer le cookie CSRF
 function getCookie(name) {
     let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + "=")) {
                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
             }
         }
     }
     return cookieValue;
 }
-</script>
 
+// AJAX Ajouter au panier + toast
+document.addEventListener("DOMContentLoaded", () => {
+    const forms = document.querySelectorAll("form.add-to-cart-form");
+    if (!forms || forms.length === 0) return; // ← évite les erreurs si aucun formulaire
+
+    const csrftoken = getCookie("csrftoken");
+    const toast = document.getElementById("add-to-cart-toast");
+
+    forms.forEach(form => {
+        form.addEventListener("submit", e => {
+            e.preventDefault();
+            fetch(form.action, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrftoken,
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: new FormData(form)
+            })
+            .then(r => r.json())
+            .then(data => {
+                // Met à jour le badge panier
+                if (data.cart_count !== undefined) {
+                    const badge = document.querySelector("#cart-badge");
+                    if (badge) badge.textContent = data.cart_count;
+                }
+                // Affiche le toast
+                if (toast) {
+                    toast.style.display = "block";
+                    setTimeout(() => toast.style.display = "none", 2500);
+                }
+            })
+            .catch(err => console.error(err));
+        });
+    });
+});
+</script>
 {% endblock %}
 
 </body>

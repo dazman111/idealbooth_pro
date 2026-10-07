@@ -11,7 +11,7 @@ class CustomUser(AbstractUser):
     address = models.CharField(max_length=255, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/',blank=True,null=True)
 
-    # RGPD
+
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     def is_deleted(self):
@@ -48,30 +48,6 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
-
-
-class Message(models.Model):
-    sender = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="messages_sent"
-    )
-    recipient = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="messages_received"
-    )
-    subject = models.CharField(max_length=255)
-    body = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='replies', on_delete=models.CASCADE)
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.subject} - {self.sender}"
 
 
 class Notification(models.Model):

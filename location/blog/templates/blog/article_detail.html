@@ -56,8 +56,8 @@
                             <strong class="text-dark">{{ comment.user.username }}</strong>
                             {% if comment.user == request.user %}
                                 <div class="btn-group btn-group-sm" role="group">
-                                    <a href="{% url 'edit_comment' comment.id %}" class="btn btn-outline-secondary">{% trans "Modifier" %}</a>
-                                    <a href="{% url 'delete_comment' comment.id %}" class="btn btn-outline-danger">🗑️</a>
+                                    <a href="{% url 'blog:edit_comment' comment.id %}" class="btn btn-outline-secondary">{% trans "Modifier" %}</a>
+                                    <a href="{% url 'blog:delete_comment' comment.id %}" class="btn btn-outline-danger">🗑️</a>
                                 </div>
                             {% endif %}
                         </div>
@@ -105,7 +105,7 @@
         </div>
     {% else %}
         <div class="alert alert-warning mt-4 animate-fade-in">
-            {% trans "Vous devez" %}<a href="{% url 'login' %}">{% trans "vous connecter" %}</a> {% trans "pour laisser un commentaire." %}
+            {% trans "Vous devez" %}<a href="{% url 'blog:login' %}">{% trans "vous connecter" %}</a> {% trans "pour laisser un commentaire." %}
         </div>
     {% endif %}
 
@@ -177,7 +177,7 @@
 
         $.ajax({
             type: 'POST',
-            url: '{% url "like_article" %}',
+            url: '{% url "blog:like_article" %}',
             data: {
                 'article_id': articleId,
                 'csrfmiddlewaretoken': '{{ csrf_token }}'

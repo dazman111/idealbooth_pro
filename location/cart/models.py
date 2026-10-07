@@ -36,6 +36,10 @@ class Cart(models.Model):
 
     def __str__(self):
         return f"Panier de {self.user.username} - créé le {self.created_at.date()}"
+    
+    def get_total_quantity(self):
+        """Retourne la quantité totale d'articles dans le panier."""
+        return sum(item.quantite for item in self.items.all())
 
 
 class CartItem(models.Model):

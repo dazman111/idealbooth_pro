@@ -30,7 +30,7 @@
                                     Par {{ article.author }} – {{ article.published_date|date:"d M Y" }}
                                 </p>
                                 <p class="card-text text-light">{{ article.content|strip_html|truncatewords:30 }}</p>
-                                <a href="{% url 'article_detail' article.id %}" class="btn btn-gradient mt-auto">{% trans "Lire la suite" %}</a>
+                                <a href="{% url 'blog:article_detail' article.id %}" class="btn btn-gradient mt-auto">{% trans "Lire la suite" %}</a>
                             </div>
                         </div>
                     </div>

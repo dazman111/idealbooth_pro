@@ -1,34 +1,47 @@
 {% extends 'base.html' %}
-
+{% load message_tags %}
 {% block title %}Messages Admin{% endblock %}
 
 {% block content %}
 <div class="container px-4 py-5">
     <h2 class="text-2xl font-bold mb-4">📩 Messages des utilisateurs</h2>
-     <a href="{% url 'admin_panel:admin_dashboard' %}" class="btn btn-secondary">⬅ Retour au Dashboard</a>
+    <a href="{% url 'admin_panel:admin_dashboard' %}" class="btn btn-secondary">⬅ Retour au Dashboard</a>
 
     {% if unread_count > 0 %}
-        <p class="text-sm text-red-600 mb-3">Vous avez {{ unread_count }} message(s) non lu(s).</p>
+        <p class="text-sm text-red-600 mb-3">
+            Vous avez {{ unread_count }} message(s) non lu(s).
+        </p>
     {% endif %}
+
+    <a href="?unread=1" class="text-blue-600 underline">Afficher seulement les non lus</a>
 
     <div>
         {% for msg in messages_list %}
             <div class="border p-3 mb-3 rounded {% if not msg.is_read %}bg-yellow-50{% endif %}">
                 <p class="font-semibold">{{ msg.subject }}</p>
-                <p class="text-sm text-gray-600">De: {{ msg.sender.username }} - {{ msg.created_at }}</p>
+                <p class="text-sm text-gray-600">
+                    De: {{ msg.sender.username }} - {{ msg.created_at }}
+                </p>
                 <p class="mb-2">{{ msg.body }}</p>
 
-                {% for reply in msg.replies.all %}
-                    <div class="ml-4 mt-2 p-2 border-l-2 border-gray-300">
-                        <p class="text-sm text-gray-600">Réponse: {{ reply.sender.username }}</p>
-                        <p>{{ reply.body }}</p>
-                    </div>
-                {% endfor %}
+                {# Affichage des réponses en thread #}
+                {% if threads|get_item:msg.id %}
+
+                    {% for reply in threads|get_item:msg.id %}
+                        <div class="ml-4 mt-2 p-2 border-l-2 border-gray-300">
+                            <p class="text-sm text-gray-600">
+                                Réponse: {{ reply.sender.username }} - {{ reply.created_at }}
+                            </p>
+                            <p>{{ reply.body }}</p>
+                        </div>
+                    {% endfor %}
+                {% endif %}
 
                 <form method="post" class="mt-2">
                     {% csrf_token %}
                     <input type="hidden" name="parent_id" value="{{ msg.id }}">
-                    <textarea name="body" class="w-full border p-2 rounded mb-2" placeholder="Répondre..." required></textarea>
+                    <textarea name="body" class="w-full border p-2 rounded mb-2"
+                              placeholder="Répondre..." required></textarea>
                     <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
                         Répondre
                     </button>
@@ -39,4 +52,22 @@
         {% endfor %}
     </div>
 </div>
+
+{# Notification admin en haut de page #}
+{% if admin_unread_messages > 0 %}
+    <div class="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg">
+        🔔 {{ admin_unread_messages }} message(s) non lu(s)
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh toutes les 30 secondes pour mettre à jour la liste des messages
+setInterval(() => {
+    fetch(window.location.href, {method: "HEAD"})
+        .then(() => location.reload());
+}, 30000);
+</script>
 {% endblock %}

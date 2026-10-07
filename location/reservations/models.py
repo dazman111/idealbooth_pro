@@ -85,7 +85,6 @@ class Reservation(models.Model):
         super().delete(*args, **kwargs)
         self.photobooth.update_available()
 
-
 class Invoice(models.Model):
     PAYMENT_STATUS_CHOICES = [
         ('pending', _('En attente de paiement')),
@@ -95,7 +94,20 @@ class Invoice(models.Model):
         ('cancelled', _('Annulée par l\'utilisateur')),
     ]
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    # Lien direct vers accounts.CustomUser
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,related_name="invoices")
+
+    # Champs copiés depuis CustomUser
+    first_name = models.CharField(max_length=150, blank=True, null=True)
+    last_name = models.CharField(max_length=150, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    address = models.CharField(max_length=255, blank=True, null=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    stripe_paid = models.BooleanField(default=False)
+
+
+    payment_date = models.DateTimeField(null=True, blank=True)
+
     total_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -125,37 +137,41 @@ class Invoice(models.Model):
         blank=True,
         help_text="Coupon appliqué à cette facture."
     )
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Montant de la réduction appliquée.")
+    discount_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="Montant de la réduction appliquée."
+    )
 
-    # --- Infos société ---
-    company_name = models.CharField(max_length=255, blank=True, null=True, help_text=_("Nom de la société"))
-    company_vat_number = models.CharField(max_length=50, blank=True, null=True, help_text=_("Numéro de TVA intracommunautaire"))
-    company_phone = models.CharField(max_length=20, blank=True, null=True, help_text=_("Numéro de téléphone de la société"))
-    company_email = models.EmailField(blank=True, null=True, help_text=_("Adresse email de la société"))
-    company_address = models.TextField(blank=True, null=True, help_text=_("Adresse complète de la société"))
+    def save(self, *args, **kwargs):
+        # Copie les infos de l’utilisateur au moment de la sauvegarde
+        if self.user:
+            self.first_name = self.user.first_name
+            self.last_name = self.user.last_name
+            self.email = self.user.email
+            self.address = self.user.address
+            self.phone_number = self.user.phone_number
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Facture #{self.id} de {self.user.username} - {self.total_amount}€ ({self.get_payment_status_display()})"
-    
+        return (
+            f"Facture #{self.id} - {self.total_amount}€ "
+            f"({self.get_payment_status_display()}) - "
+            f"{self.first_name} {self.last_name} ({self.email})"
+        )
+
     def apply_coupon(self, coupon: Coupon):
         """Applique un coupon à la facture et met à jour le montant final."""
         if coupon and coupon.est_valide():
             remise = coupon.apply_discount(self.total_amount)
             self.discount_amount = remise
             self.coupon_used = coupon
-            self.total_amount -= remise
+            self.total_amount -= max(self.total_amount - remise, 0)
             self.save()
             return True
         return False
     
-    def save(self, *args, **kwargs):
-        if not self.company_name:
-            self.company_name = "Idealbooth SARL"
-            self.company_vat_number = "N TVA 12345678900978"
-            self.company_phone = "+32 465 45 67 89"
-            self.company_email = "bpgloire@gmail.com"
-            self.company_address = " 123 Rue des Lumières, 6000 Charleroi, Belgique"
-        super().save(*args, **kwargs)
 
 class Notification(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="notifications")

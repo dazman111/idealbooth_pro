@@ -16,7 +16,7 @@
                 {% csrf_token %}
                 {{ form.as_p }}
                 <div class="d-flex justify-content-between mt-4">
-                    <a href="{% url 'article_detail' form.instance.article.id %}" class="btn btn-outline-secondary">
+                    <a href="{% url 'blog:article_detail' form.instance.article.id %}" class="btn btn-outline-secondary">
                         ← Retour à l'article
                     </a>
                     <button type="submit" class="btn btn-primary">

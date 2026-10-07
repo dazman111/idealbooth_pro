@@ -11,9 +11,12 @@ from django.contrib import messages
 from .models import ArticleImage
 
 
+
 def blog_home(request):
-    articles = Article.objects.all()
-    return render(request, 'blog/blog_home.html', {'articles': articles})
+    articles = Article.objects.all().order_by("-created_at")
+    return render(request, "blog/blog_home.html", {"articles": articles})
+
+
 def article_detail(request, article_id):
     article = get_object_or_404(Article, id=article_id)
     comments = article.comments.all()
@@ -107,9 +110,14 @@ def add_article(request):
         form = ArticleForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            return redirect('manage_blog')
+
+            # Charger la vue manage_blog directement ➝ HTTP 200
+            from admin_panel.views import manage_blog
+            return manage_blog(request)
+
     else:
         form = ArticleForm()
+
     return render(request, 'blog/add_article.html', {'form': form})
 
 @user_passes_test(is_admin)
@@ -121,7 +129,7 @@ def edit_article(request, article_id):
         if form.is_valid() and formset.is_valid():
             form.save()
             formset.save()
-            return redirect('manage_blog')
+            return redirect('blog:manage_blog')
     else:
         form = ArticleForm(instance=article)
         formset = ArticleImageFormSet(instance=article)
@@ -131,7 +139,11 @@ def edit_article(request, article_id):
 def delete_article(request, article_id):
     article = get_object_or_404(Article, id=article_id)
     article.delete()
-    return redirect('manage_blog')
+
+    # Charger directement la vue du blog admin sans redirection
+    from admin_panel.views import manage_blog
+
+    return manage_blog(request)   
 
 @csrf_exempt
 @login_required

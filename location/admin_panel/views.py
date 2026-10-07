@@ -11,7 +11,7 @@ from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from django.contrib import messages as django_messages
 from django.contrib import messages
-from accounts.models import Message
+from .models import Message
 from django.db.models import Count, Sum
 from django.db.models.functions import TruncMonth
 from reportlab.pdfgen import canvas
@@ -44,6 +44,9 @@ from django.contrib import messages
 from photobooths.models import Accessory
 from photobooths.forms import AccessoryForm
 from .permissions import is_admin
+from admin_panel.models import Message
+from photobooths.models import Photobooth
+from .forms import PhotoboothForm
 
 
 # Configurez le logger pour cette application
@@ -127,6 +130,8 @@ def admin_dashboard(request):
     ).order_by('-created_at')
 
     unread_count = notifications.filter(read=False).count()
+    # ✉️ Messages non lus 
+    unread_messages = Message.objects.filter(is_read=False).count()
 
     context = {
         "total_users": total_users,
@@ -141,6 +146,47 @@ def admin_dashboard(request):
     }
 
     return render(request, "admin_panel/admin_dashboard.html", context)
+
+#MESSAGE ADMIN
+@staff_member_required
+def admin_messages(request):
+    # Tous les messages reçus par l'admin
+    messages_list = Message.objects.filter(recipient=request.user).order_by('-created_at')
+    unread_count = messages_list.filter(is_read=False).count()
+
+    # Construction des threads (réponses liées à un message parent)
+    threads = {}
+    for msg in messages_list:
+        if msg.parent:
+            threads.setdefault(msg.parent.id, []).append(msg)
+
+    # Réponse à un message
+    if request.method == 'POST':
+        parent_id = request.POST.get('parent_id')
+        body = request.POST.get('body')
+
+        parent_msg = get_object_or_404(Message, id=parent_id)
+
+        # Création d'un nouveau message (réponse)
+        Message.objects.create(
+            sender=request.user,
+            recipient=parent_msg.sender,
+            subject=f"Re: {parent_msg.subject}",
+            body=body,
+            parent=parent_msg
+        )
+
+        parent_msg.is_read = True
+        parent_msg.save()
+
+        messages.success(request, "Réponse envoyée avec succès.")
+        return redirect('admin_panel:admin_messages')
+
+    return render(request, 'admin_panel/messages.html', {
+        'messages_list': messages_list,
+        'unread_count': unread_count,
+        'threads': threads,
+    })
 
 
 #GESTION UTILISATEURS
@@ -239,6 +285,7 @@ def photobooth_list(request):
     booths = Photobooth.objects.all()
     return render(request, "admin_panel/photobooths/manage_photobooths.html", {"booths": booths})
 
+
 @login_required
 @user_passes_test(is_admin)
 def restock_photobooth(request, pk):
@@ -249,21 +296,22 @@ def restock_photobooth(request, pk):
 
         if action == "stock":
             booth.stock += 1
-            booth.save()
-            messages.success(request, "1 unité ajoutée au stock.")
 
-        elif action == "online":
-            if booth.stock > 0:
-                booth.available += 1
-                booth.stock -= 1
-                booth.save()
-                messages.success(request, "Un modèle du stock est repassé en ligne.")
-            else:
-                messages.error(request, "Aucun stock disponible pour remettre en ligne.")
+        elif action == "online" and booth.stock > 0:
+            booth.available += 1
+            booth.stock -= 1
 
-        return redirect("admin_panel:admin_photobooth_list")
+        booth.save()
 
-    return redirect("admin_panel:admin_photobooth_list")
+        return JsonResponse({
+            "success": True,
+            "stock": booth.stock,
+            "available": booth.available,
+            "action": action
+        }, status=200)
+
+    return JsonResponse({"success": False}, status=400)
+
 
 @login_required
 def rent_photobooth(request, pk):
@@ -306,23 +354,33 @@ def add_photobooth(request):
 def edit_photobooth(request, pk):
     booth = get_object_or_404(Photobooth, pk=pk)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = PhotoboothForm(request.POST, request.FILES, instance=booth)
+
         if form.is_valid():
             form.save()
-            messages.success(request, "Photobooth modifié avec succès.")
-            return redirect('admin_panel:manage_photobooths')  # ← redirection vers le dashboard
-        else:
-            messages.error(request, "Erreur lors de la modification du photobooth.")
-    else:
-        form = PhotoboothForm(instance=booth)
 
+            # Réponse AJAX → 200 OK
+            return JsonResponse({
+                "success": True,
+                "message": "Photobooth mis à jour avec succès."
+            }, status=200)
+
+        # Erreurs du formulaire
+        return JsonResponse({
+            "success": False,
+            "errors": form.errors
+        }, status=400)
+
+    # GET normal → afficher la page
+    form = PhotoboothForm(instance=booth)
     return render(
         request,
-        'admin_panel/photobooth_form.html',
+        "admin_panel/edit_photobooth.html",
         {
-            'form': form,
-            'title': 'Modifier le photobooth',
+            "form": form,
+            "booth": booth,
+            "title": "Modifier le photobooth",
         }
     )
 
@@ -744,35 +802,6 @@ def cancelled_count_api(request):
         count = Reservation.objects.filter(status="canceled").count()
         return JsonResponse({"cancelled_count": count})
     return JsonResponse({"error": "Invalid request"}, status=400)
-
-
-@staff_member_required 
-def admin_messages(request):
-    # Tous les messages reçus par l'admin
-    messages_list = Message.objects.filter(recipient=request.user).order_by('-created_at')
-    unread_count = messages_list.filter(is_read=False).count()
-
-    # voici la réponse
-    if request.method == 'POST':
-        parent_id = request.POST.get('parent_id')
-        body = request.POST.get('body')
-        parent_msg = get_object_or_404(Message, id=parent_id)
-        Message.objects.create(
-            sender=request.user,
-            recipient=parent_msg.sender,
-            subject=f"Re: {parent_msg.subject}",
-            body=body,
-            parent=parent_msg
-        )
-        parent_msg.is_read = True
-        parent_msg.save()
-        messages.success(request, "Réponse envoyée avec succès.")
-        return redirect('admin_panel:admin_messages')
-
-    return render(request, 'admin_panel/messages.html', {
-        'messages_list': messages_list,
-        'unread_count': unread_count
-    })
 
 #LISTE COUPONS
 @login_required

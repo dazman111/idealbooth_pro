@@ -107,75 +107,93 @@
     </ul>
 </section>
 
+<div class="row g-4 mb-5">
 
-    <!-- MODAL -->
-    <div id="reservationModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 transition-opacity duration-300 ease-in-out opacity-0 pointer-events-none" style="display:none;">
-        <div id="modalBody" class="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full transform transition-all duration-300 ease-in-out scale-95">
-            <!-- Le contenu sera injecté ici par JavaScript -->
+    <!-- Card: Accessoires -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card border-0 shadow rounded-3 p-4 h-100">
+            <h5 class="card-title fw-bold mb-2">
+                <i class="bi bi-stars text-info"></i> Accessoires
+            </h5>
+            <a href="{% url 'admin_panel:accessory_list' %}" class="stretched-link text-decoration-none text-info">
+                Gérer les accessoires
+            </a>
         </div>
     </div>
 
-    <div class="row g-4 mb-5">
-        <!-- Card: Réservations -->
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card border-0 shadow rounded-3 p-4 h-100">
-                <h5 class="card-title fw-bold mb-2"><i class="bi bi-calendar-check text-primary"></i> Réservations</h5>
-                <a href="{% url 'admin_panel:manage_reservations' %}" class="stretched-link text-decoration-none text-primary">Gérer les réservations</a>
-            </div>
+    <!-- Card: Blog -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card border-0 shadow rounded-3 p-4 h-100">
+            <h5 class="card-title fw-bold mb-2">
+                <i class="bi bi-journal-text text-info"></i> Blog
+            </h5>
+            <a href="{% url 'admin_panel:manage_blog' %}" class="stretched-link text-decoration-none text-info">
+                Gérer le blog
+            </a>
         </div>
+    </div>
 
-        <!-- Card: Utilisateurs -->
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card border-0 shadow rounded-3 p-4 h-100">
-                <h5 class="card-title fw-bold mb-2"><i class="bi bi-people-fill text-success"></i> Utilisateurs</h5>
-                <a href="{% url 'admin_panel:manage_users' %}" class="stretched-link text-decoration-none text-success">Voir les utilisateurs</a>
-            </div>
+    <!-- Card: Coupons -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card border-0 shadow rounded-3 p-4 h-100">
+            <h5 class="card-title fw-bold mb-2">
+                <i class="bi bi-ticket-detailed text-primary"></i> Coupons
+            </h5>
+            <a href="{% url 'admin_panel:admin_coupon_list' %}" class="stretched-link text-decoration-none text-primary">
+                Gérer les coupons
+            </a>
         </div>
+    </div>
 
-        <!-- Card: Photobooths -->
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card border-0 shadow rounded-3 p-4 h-100">
-                <h5 class="card-title fw-bold mb-2"><i class="bi bi-camera text-danger"></i> Photobooths</h5>
-                <a href="{% url 'admin_panel:manage_photobooths' %}" class="stretched-link text-decoration-none text-danger">Gérer les modèles</a>
-            </div>
+    <!-- Card: Messages -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card border-0 shadow rounded-3 p-4 h-100">
+            <h5 class="card-title fw-bold mb-2">
+                <i class="bi bi-envelope text-warning"></i> Messages
+            </h5>
+            <a href="{% url 'admin_panel:admin_messages' %}" class="stretched-link text-decoration-none text-warning">
+                Gérer les messages
+            </a>
         </div>
-                <!-- Card: Accessoires -->
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card border-0 shadow rounded-3 p-4 h-100">
-                <h5 class="card-title fw-bold mb-2"><i class="bi bi-stars text-info"></i> Accessoires</h5>
-                <a href="{% url 'admin_panel:accessory_list' %}" class="stretched-link text-decoration-none text-info">
-                    Gérer les accessoires
-                </a>
-            </div>
-        </div>
-        
-        <!-- Card: Blog -->
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card border-0 shadow rounded-3 p-4 h-100">
-                <h5 class="card-title fw-bold mb-2"><i class="bi bi-journal-text text-info"></i> Blog</h5>
-                <a href="{% url 'admin_panel:manage_blog' %}" class="stretched-link text-decoration-none text-info">Gérer le blog</a>
-            </div>
-        </div>
+    </div>
 
-        <!-- Card: Messages -->
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card border-0 shadow rounded-3 p-4 h-100">
-                <h5 class="card-title fw-bold mb-2">
-                    <i class="bi bi-envelope text-warning"></i> Messages
-                </h5>
-                <a href="{% url 'admin_panel:admin_messages' %}" class="stretched-link text-decoration-none text-warning">
-                    Gérer les messages
-                </a>
-            </div>
+    <!-- Card: Photobooths -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card border-0 shadow rounded-3 p-4 h-100">
+            <h5 class="card-title fw-bold mb-2">
+                <i class="bi bi-camera text-danger"></i> Photobooths
+            </h5>
+            <a href="{% url 'admin_panel:manage_photobooths' %}" class="stretched-link text-decoration-none text-danger">
+                Gérer les modèles
+            </a>
         </div>
+    </div>
 
-        <!-- Card: Coupons -->
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card border-0 shadow rounded-3 p-4 h-100">
-                <h5 class="card-title fw-bold mb-2"><i class="bi bi-ticket-detailed text-primary"></i> Coupons</h5>
-                <a href="{% url 'admin_panel:admin_coupon_list' %}" class="stretched-link text-decoration-none text-primary">Gérer les coupons</a>
-            </div>
+    <!-- Card: Réservations -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card border-0 shadow rounded-3 p-4 h-100">
+            <h5 class="card-title fw-bold mb-2">
+                <i class="bi bi-calendar-check text-primary"></i> Réservations
+            </h5>
+            <a href="{% url 'admin_panel:manage_reservations' %}" class="stretched-link text-decoration-none text-primary">
+                Gérer les réservations
+            </a>
         </div>
+    </div>
+
+    <!-- Card: Utilisateurs -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card border-0 shadow rounded-3 p-4 h-100">
+            <h5 class="card-title fw-bold mb-2">
+                <i class="bi bi-people-fill text-success"></i> Utilisateurs
+            </h5>
+            <a href="{% url 'admin_panel:manage_users' %}" class="stretched-link text-decoration-none text-success">
+                Voir les utilisateurs
+            </a>
+        </div>
+    </div>
+
+</div>
 
     <div class="row g-4 mb-5">
         <!-- Statistiques -->

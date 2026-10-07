@@ -242,33 +242,53 @@ a.remove-item:hover {
       </tr>
     </thead>
     <tbody>
-      {% for item in cart.items.all %}
-      <tr>
-        <form method="POST" action="{% url 'update_cart_item' item.id %}">
-          {% csrf_token %}
-          <td><img src="{{ item.photobooth.image.url }}" class="product-image" alt="{{ item.photobooth.name }}"></td>
-          <td>{{ item.photobooth.name }}</td>
-          <td><input type="date" name="start_date" value="{{ item.start_date|date:'Y-m-d' }}" required class="start_date"></td>
-          <td><input type="date" name="end_date" value="{{ item.end_date|date:'Y-m-d' }}" required class="end_date"></td>
-          <td>
-            <select name="type_evenement">
-              {% for value, label in item.EVENEMENT_CHOICES %}
-              <option value="{{ value }}" {% if item.type_evenement == value %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </td>
-          <td><input type="number" name="quantite" value="{{ item.quantite }}" min="1"></td>
-          <td>{{ item.photobooth.price }} €</td>
-          <td>{{ item.duration }} j</td>
-          <td>{{ item.subtotal|floatformat:2 }} €</td>
-          <td>
-            <button type="submit"><i class="fas fa-edit"></i></button><br>
-            <a href="{% url 'remove_from_cart' item.id %}" class="remove-item"><i class="fas fa-trash-alt"></i></a>
-          </td>
-        </form>
-      </tr>
-      {% endfor %}
-    </tbody>
+{% for item in cart.items.all %}
+<tr id="row-{{ item.id }}">
+
+    <td><img src="{{ item.photobooth.image.url }}" class="product-image" alt="{{ item.photobooth.name }}"></td>
+
+    <td>{{ item.photobooth.name }}</td>
+
+    <td>
+        <input type="date" id="start-{{ item.id }}" value="{{ item.start_date|date:'Y-m-d' }}" required>
+    </td>
+
+    <td>
+        <input type="date" id="end-{{ item.id }}" value="{{ item.end_date|date:'Y-m-d' }}" required>
+    </td>
+
+    <td>
+        <select id="event-{{ item.id }}">
+            {% for value, label in item.EVENEMENT_CHOICES %}
+            <option value="{{ value }}" {% if item.type_evenement == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </td>
+
+    <td>
+        <input type="number" id="qty-{{ item.id }}" value="{{ item.quantite }}" min="1">
+    </td>
+
+    <td>{{ item.photobooth.price }} €</td>
+
+    <td>{{ item.duration }} j</td>
+
+    <td id="subtotal-{{ item.id }}">{{ item.subtotal|floatformat:2 }} €</td>
+
+    <td>
+        <button type="button" onclick="updateCartItem({{ item.id }})">
+            <i class="fas fa-edit"></i>
+        </button>
+        <br>
+        <a href="{% url 'remove_from_cart' item.id %}" class="remove-item">
+            <i class="fas fa-trash-alt"></i>
+        </a>
+    </td>
+
+</tr>
+{% endfor %}
+</tbody>
+
   </table>
 <!-- Ancien formulaire supprimé ici -->
 <div class="apply-coupon-form">
@@ -324,6 +344,57 @@ a.remove-item:hover {
 </div>
 {% endif %}
 <script>
+/* Fonction CSRF commune */
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+/* Mise à jour d’un article du panier (ligne uniquement) */
+function updateCartItem(itemId) {
+
+    const formData = new FormData();
+    formData.append("quantite", document.getElementById(`qty-${itemId}`).value);
+    formData.append("type_evenement", document.getElementById(`event-${itemId}`).value);
+    formData.append("start_date", document.getElementById(`start-${itemId}`).value);
+    formData.append("end_date", document.getElementById(`end-${itemId}`).value);
+    formData.append("csrfmiddlewaretoken", getCSRFToken());
+
+    fetch(`/fr/cart/update-item/${itemId}/`, {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+
+        if (!data.success) {
+            alert(data.message);
+            return;
+        }
+
+        // Met à jour la ligne
+        document.getElementById(`subtotal-${itemId}`).textContent =
+            Number(data.subtotal).toFixed(2) + " €";
+
+        // Met à jour le sous-total global
+        document.getElementById("subtotal").textContent =
+            Number(data.subtotal_global).toFixed(2);
+
+        // Met à jour le total global
+        document.getElementById("total").textContent =
+            Number(data.total_final).toFixed(2);
+
+        // ❌ NE PAS toucher à la réduction
+        // discountRow, discountAmount, couponDisplay, couponPercent → NE PAS MODIFIER
+
+        alert("Article mis à jour !");
+    })
+    .catch(error => console.error("Erreur AJAX :", error));
+}
+
+</script>
+
+<script>
+/* Gestion du coupon */
 document.addEventListener('DOMContentLoaded', function() {
 
     const form = document.getElementById('coupon-form');
@@ -338,24 +409,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const totalEl = document.getElementById('total');
 
-    function getCookie(name) {
-        let cookieValue = null;
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
-            cookie = cookie.trim();
-            if (cookie.startsWith(name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-        return cookieValue;
-    }
+    const couponInput = document.getElementById('coupon-code');
+    const couponButton = form.querySelector("button");
+
+    /* IMPORTANT : ne rien faire au chargement */
+    /* Pas de désactivation, pas de texte automatique */
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        const codeInput = document.getElementById('coupon-code');
-        const code = codeInput.value.trim();
+        const code = couponInput.value.trim();
 
         if (!code) {
             messagesDiv.innerHTML = `<div class="p-2 bg-red-500 text-white rounded">Entrez un code</div>`;
@@ -364,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData();
         formData.append('code', code);
-        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        formData.append('csrfmiddlewaretoken', getCSRFToken());
 
         try {
             const response = await fetch("{% url 'apply_coupon' %}", {
@@ -380,30 +443,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // 🎉 COUPON APPLIQUÉ
+            // Coupon appliqué (UNIQUEMENT après clic)
             messagesDiv.innerHTML = `<div class="p-2 bg-green-600 text-white rounded">${data.message}</div>`;
-
-            // Afficher le bloc réduction
             discountRow.classList.remove("hidden");
 
-            // Affiche le code coupon
             couponDisplay.textContent = code;
 
-            // Affiche le type : pourcent ou fixe
             if (data.discount_type === "percent") {
-                let percentValue = parseFloat(data.discount_value); // PAS multiplié par 100
-                document.getElementById("coupon-percent").textContent = ` (-${percentValue}%)`;
+                couponPercent.textContent = ` (-${parseFloat(data.discount_value)}%)`;
             } else {
-                document.getElementById("coupon-percent").textContent = "";
+                couponPercent.textContent = "";
             }
 
-
-            // Montant de la réduction
             discountAmount.textContent = Number(data.discount_amount).toFixed(2);
 
-            // Mise à jour total
             subtotalEl.textContent = Number(data.subtotal).toFixed(2);
             totalEl.textContent = Number(data.total_final).toFixed(2);
+
+            /* Désactiver champ + bouton APRÈS clic */
+            couponInput.value = "Code appliqué ";
+            couponInput.disabled = true;
+
+            couponButton.textContent = "Coupon appliqué ";
+            couponButton.disabled = true;
+            couponButton.style.backgroundColor = "#5B6E9D";
+            couponButton.style.cursor = "default";
 
         } catch (err) {
             console.error(err);
@@ -413,5 +477,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 </script>
-
 {% endblock %}

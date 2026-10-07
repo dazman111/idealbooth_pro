@@ -8,7 +8,7 @@
 <div class="container my-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold">📝 Gestion des articles du blog</h2>
-        <a href="{% url 'add_article' %}" class="btn btn-success">
+        <a href="{% url 'blog:add_article' %}" class="btn btn-success">
             <i class="bi bi-plus-circle me-1"></i> Ajouter un article
         </a>
     </div>
@@ -29,10 +29,10 @@
                                 Publié le {{ article.published_date|date:"d M Y" }} par {{ article.author }}
                             </p>
                             <div class="mt-auto d-flex justify-content-between">
-                                <a href="{% url 'edit_article' article.id %}" class="btn btn-outline-primary btn-sm">
+                                <a href="{% url 'blog:edit_article' article.id %}" class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-pencil-square"></i> Modifier
                                 </a>
-                                <a href="{% url 'delete_article' article.id %}" class="btn btn-outline-danger btn-sm"
+                                <a href="{% url 'blog:delete_article' article.id %}" class="btn btn-outline-danger btn-sm"
                                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet article ?')">
                                     <i class="bi bi-trash3"></i> Supprimer
                                 </a>

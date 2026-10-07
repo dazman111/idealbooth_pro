@@ -25,6 +25,7 @@ urlpatterns = [
     path('photobooths/add/', views.add_photobooth, name='add_photobooth'),
     path('photobooths/edit/<int:pk>/', views.edit_photobooth, name='edit_photobooth'),
     path('photobooths/delete/<int:pk>/', views.delete_photobooth, name='delete_photobooth'),
+    
     path("photobooths/<int:pk>/restock/", views.restock_photobooth, name="restock_photobooth"),
 
     #GESTION DES ACCESSOIRES
