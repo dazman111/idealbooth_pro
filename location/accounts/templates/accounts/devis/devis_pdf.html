@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'DejaVu Sans', sans-serif; padding: 20px; }
+        h1 { font-size: 24px; margin-bottom: 10px; }
+        h2 { font-size: 18px; margin-top: 20px; }
+        p { font-size: 14px; }
+        .total { font-size: 20px; font-weight: bold; margin-top: 20px; }
+        .section { margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<h1>Devis Photobooth – {{ devis.numero }}</h1>
+<p>Date : {{ devis.date_creation|date:"d/m/Y" }}</p>
+
+<div class="section">
+    <h2>Informations Entreprise</h2>
+    <p><strong>Nom :</strong> {{ devis.company_name }}</p>
+    <p><strong>Adresse :</strong> {{ devis.company_address }}</p>
+    <p><strong>TVA :</strong> {{ devis.company_vat_number }}</p>
+</div>
+
+<div class="section">
+    <h2>Détails de la prestation</h2>
+    <p>{{ devis.description }}</p>
+    <p><strong>Durée :</strong> {{ devis.duree }} heures</p>
+</div>
+
+<div class="section">
+    <h2>Tarification</h2>
+    <p><strong>Prix HT :</strong> {{ devis.prix_ht }} €</p>
+    <p><strong>TVA :</strong> {{ devis.tva }} %</p>
+    <p class="total"><strong>Total TTC :</strong> {{ devis.prix_ttc }} €</p>
+</div>
+
+</body>
+</html>

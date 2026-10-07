@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <div class="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
+
+        <h1 class="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-yellow-500 bg-clip-text text-transparent">
+            {% trans "Facture" %} {{ invoice.numero }}
+        </h1>
+
+        <!-- Informations principales -->
+        <div class="mb-4">
+            <p class="text-gray-700 text-lg">
+                <strong>{% trans "Date :" %}</strong>
+                {{ invoice.date_creation|date:"d/m/Y" }}
+            </p>
+
+            <p class="text-gray-700 text-lg">
+                <strong>{% trans "Statut :" %}</strong>
+                {% if invoice.status == "paid" %}
+                    <span class="text-green-600 font-semibold">{% trans "Payée" %}</span>
+                {% else %}
+                    <span class="text-red-600 font-semibold">{% trans "Impayée" %}</span>
+                {% endif %}
+            </p>
+        </div>
+
+        <hr class="my-4">
+
+        <!-- Informations du devis lié -->
+        <h2 class="text-xl font-semibold mb-3">{% trans "Informations du devis" %}</h2>
+
+        <p class="text-gray-700">
+            <strong>{% trans "Numéro du devis :" %}</strong>
+            {{ invoice.devis.numero }}
+        </p>
+
+        <p class="text-gray-700">
+            <strong>{% trans "Description :" %}</strong>
+            {{ invoice.devis.description }}
+        </p>
+
+        <p class="text-gray-700">
+            <strong>{% trans "Durée :" %}</strong>
+            {{ invoice.devis.duree }} {% trans "jour" %}{% if invoice.devis.duree > 1 %}s{% endif %}
+        </p>
+
+
+        <p class="text-gray-700">
+            <strong>{% trans "TVA :" %}</strong>
+            {{ invoice.devis.tva }} %
+        </p>
+
+        <hr class="my-4">
+
+        <!-- Montants -->
+        <h2 class="text-xl font-semibold mb-3">{% trans "Montants" %}</h2>
+
+        <p class="text-gray-700 text-lg">
+            <strong>{% trans "Montant HT :" %}</strong>
+            {{ invoice.montant_ht }} €
+        </p>
+
+        <p class="text-gray-700 text-lg">
+            <strong>{% trans "Montant TTC :" %}</strong>
+            <span class="text-blue-600 font-bold">{{ invoice.montant_ttc }} €</span>
+        </p>
+
+        <hr class="my-4">
+
+        <!-- Boutons -->
+        <div class="mt-6 flex gap-3">
+
+            <a href="{% url 'accounts:invoice_pdf' invoice.id %}"
+               class="btn btn-primary px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition">
+                {% trans "Télécharger PDF" %}
+            </a>
+
+            <a href="{% url 'accounts:factures_list' %}"
+               class="btn btn-outline-secondary px-4 py-2 rounded-lg">
+                {% trans "Retour aux factures" %}
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

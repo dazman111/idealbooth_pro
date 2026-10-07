@@ -1,0 +1,18 @@
+<p>Bonjour {{ user.company_name }},</p>
+
+<p>Votre devis Photobooth est prêt.</p>
+
+<p><strong>Numéro du devis :</strong> {{ devis.numero }}</p>
+<p><strong>Total TTC :</strong> {{ devis.prix_ttc }} €</p>
+
+<p>Vous pouvez le consulter directement ici :</p>
+
+<p>
+    <a href="https://votre-site.com/devis/{{ devis.id }}"
+       style="background:#5B6E9D;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;">
+        Voir mon devis
+    </a>
+</p>
+
+<p>Merci pour votre confiance.</p>
+<p>L’équipe Photobooth</p>

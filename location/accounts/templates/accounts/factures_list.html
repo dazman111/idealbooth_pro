@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <h1 class="fw-bold mb-4 text-3xl bg-gradient-to-r from-blue-600 to-yellow-500 bg-clip-text text-transparent">
+        {% trans "Mes factures" %}
+    </h1>
+
+    {% if factures %}
+    <div class="row g-4">
+
+        {% for f in factures %}
+        <div class="col-md-6 col-lg-4">
+
+            <div class="card shadow-sm border border-gray-200 hover:shadow-lg transition rounded-xl overflow-hidden">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title fw-bold text-gray-800">
+                            Facture {{ f.numero }}
+                        </h5>
+
+                        {% if f.status == "paid" %}
+                        <span class="badge bg-success bg-opacity-25 text-success px-3 py-2 rounded-pill">
+                            {% trans "Payée" %}
+                        </span>
+                        {% else %}
+                        <span class="badge bg-danger bg-opacity-25 text-danger px-3 py-2 rounded-pill">
+                            {% trans "Impayée" %}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="text-muted mb-1">
+                        <strong>{% trans "Date :" %}</strong> {{ f.date_creation|date:"d/m/Y" }}
+                    </p>
+
+                    <p class="text-muted mb-1">
+                        <strong>{% trans "Devis lié :" %}</strong> {{ f.devis.numero }}
+                    </p>
+
+                    <p class="text-muted mb-3">
+                        <strong>{% trans "Montant TTC :" %}</strong>
+                        <span class="text-blue-600 fw-bold">{{ f.montant_ttc }} €</span>
+                    </p>
+
+                    <div class="d-flex justify-content-between mt-4">
+
+                        <a href="{% url 'accounts:invoice_pdf' f.id %}"
+                           class="btn btn-primary px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition">
+                            {% trans "Télécharger PDF" %}
+                        </a>
+
+                        <a href="{% url 'accounts:invoice_detail' f.id %}"
+                           class="btn btn-outline-secondary px-4 py-2 rounded-lg">
+                            {% trans "Détails" %}
+                        </a>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="alert alert-warning text-center py-4 rounded-lg shadow-sm">
+        {% trans "Aucune facture disponible." %}
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto p-8 bg-white shadow rounded-lg">
+
+    <h1 class="text-3xl font-bold mb-6">
+        {% trans "Informations de l'entreprise" %}
+    </h1>
+
+    <form method="POST" class="space-y-6">
+        {% csrf_token %}
+
+        <div>
+            <label class="block font-semibold mb-1">
+                {% trans "Nom de l'entreprise" %}
+            </label>
+            <input type="text" name="company_name" value="{{ user.company_name }}"
+                   class="w-full border rounded p-2">
+        </div>
+
+        <div>
+            <label class="block font-semibold mb-1">
+                {% trans "Numéro de TVA" %}
+            </label>
+            <input type="text" name="company_vat_number" value="{{ user.company_vat_number }}"
+                   class="w-full border rounded p-2">
+        </div>
+
+        <div>
+            <label class="block font-semibold mb-1">
+                {% trans "Adresse de l'entreprise" %}
+            </label>
+            <input type="text" name="company_address" value="{{ user.company_address }}"
+                   class="w-full border rounded p-2">
+        </div>
+
+        <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            {% trans "Enregistrer" %}
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="p-8">
+
+    <h1 class="text-4xl font-bold mb-10 text-gray-800">
+        {% trans "Dashboard Entreprise" %}
+    </h1>
+
+    <!-- Grille des cartes -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+
+        <!-- Carte : Réservations -->
+        <a href="{% url 'accounts:entreprise_reservations' %}"
+           class="group p-6 bg-white shadow-lg rounded-xl border border-gray-200 hover:shadow-xl hover:border-blue-500 transition-all duration-200">
+
+            <div class="flex items-center space-x-4">
+                <div class="text-4xl"></div>
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800 group-hover:text-blue-600">
+                        {% trans "Mes réservations" %}
+                    </h2>
+                    <p class="text-gray-600">
+                        {% trans "Historique et gestion des locations." %}
+                    </p>
+                </div>
+            </div>
+        </a>
+
+        <!-- Carte : Factures -->
+        <a href="{% url 'accounts:factures_list' %}"
+           class="group p-6 bg-white shadow-lg rounded-xl border border-gray-200 hover:shadow-xl hover:border-blue-500 transition-all duration-200">
+
+            <div class="flex items-center space-x-4">
+                <div class="text-4xl"></div>
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800 group-hover:text-blue-600">
+                        {% trans "Mes factures" %}
+                    </h2>
+                    <p class="text-gray-600">
+                        {% trans "Télécharger vos factures professionnelles." %}
+                    </p>
+                </div>
+            </div>
+        </a>
+        <!-- Carte : Modifier Profil -->
+        <a href="{% url 'accounts:edit_profile' %}"
+        class="group p-6 bg-white shadow-lg rounded-xl border border-gray-200 hover:shadow-xl hover:border-blue-500 transition-all duration-200">
+
+            <div class="flex items-center space-x-4">
+                <div class="text-4xl"></div>
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800 group-hover:text-blue-600">
+                        {% trans "Modifier mon profil" %}
+                    </h2>
+                    <p class="text-gray-600">
+                        {% trans "Mettre à jour mes informations personnelles et entreprise." %}
+                    </p>
+                </div>
+            </div>
+        </a>
+
+
+    </div>
+
+    <!-- SECTION : Aperçu des devis -->
+    <h2 class="text-2xl font-bold mb-4 text-gray-800">📄 {% trans "Derniers devis" %}</h2>
+
+    {% if devis %}
+        <div class="space-y-4 mb-12">
+            {% for d in devis|slice:":3" %}
+                <div class="p-4 bg-white shadow rounded-lg border border-gray-200">
+                    <div class="flex justify-between">
+                        <div>
+                            <p class="font-semibold">Devis {{ d.numero }}</p>
+                            <p class="text-gray-600">
+                                {{ d.date_creation|date:"d/m/Y" }}
+                            </p>
+
+                        </div>
+                        <a href="{% url 'accounts:devis_pdf' d.id %}" class="text-blue-600 font-semibold">
+                            PDF →
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-gray-600 mb-12">{% trans "Aucun devis disponible." %}</p>
+    {% endif %}
+
+    <!-- SECTION : Aperçu des factures -->
+    <h2 class="text-2xl font-bold mb-4 text-gray-800">📑 {% trans "Dernières factures" %}</h2>
+
+    {% if factures %}
+        <div class="space-y-4">
+            {% for f in factures|slice:":3" %}
+                <div class="p-4 bg-white shadow rounded-lg border border-gray-200">
+                    <div class="flex justify-between">
+                        <div>
+                            <p class="font-semibold">Facture {{ f.numero }}</p>
+                            <p class="text-gray-600">
+                                {{ f.date_creation|date:"d/m/Y" }}
+                            </p>
+                        </div>
+                        <a href="{% url 'accounts:invoice_pdf' f.id %}" class="text-blue-600 font-semibold">
+                            PDF →
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-gray-600">{% trans "Aucune facture disponible." %}</p>
+    {% endif %}
+
+</div>
+
+{% endblock %}

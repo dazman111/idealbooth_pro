@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: DejaVu Sans, sans-serif; padding: 15px; font-size: 12px; }
+
+        .header { text-align: center; margin-bottom: 5px; }
+        .logo { max-width: 120px; margin-bottom: 3px; }
+
+        h1 { font-size: 18px; margin: 3px 0; }
+        h2 { font-size: 14px; margin: 10px 0 5px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        th, td { border: 1px solid #ccc; padding: 4px; }
+        th { background: #f3f3f3; font-weight: bold; }
+
+        .right { text-align: right; }
+        .bold { font-weight: bold; }
+
+        .footer { margin-top: 10px; font-size: 10px; color: #555; }
+    </style>
+</head>
+<body>
+
+<!-- LOGO + TITRE -->
+<div class="header">
+    <img src="{{ logo_path }}" class="logo" alt="Logo IdealBooth">
+    <h1>DEVIS N° {{ devis.numero }}</h1>
+    <p>Date : {{ devis.date_creation|date:"d/m/Y" }} — Validité : 30 jours</p>
+</div>
+
+<!-- ENTREPRISE + CLIENT -->
+<table>
+    <tr>
+        <td style="width:50%; vertical-align:top;">
+            <h2>Entreprise</h2>
+            <p><strong>{{ devis.company_name }}</strong></p>
+            <p>{{ devis.company_address }}</p>
+            <p>Tél : {{ devis.company_phone }}</p>
+            <p>Email : {{ devis.company_email }}</p>
+            <p>TVA : {{ devis.company_vat_number }}</p>
+        </td>
+
+        <td style="width:50%; vertical-align:top;">
+            <h2>Client</h2>
+            <p><strong>{{ devis.client_name }}</strong></p>
+            <p>{{ devis.client_address }}</p>
+            <p>TVA : {{ devis.client_vat_number }}</p>
+        </td>
+    </tr>
+</table>
+
+<!-- DÉTAILS -->
+<h2>Prestation</h2>
+
+<table>
+    <tr>
+        <td><strong>Date événement :</strong></td>
+        <td>{% if event_date %}{{ event_date|date:"d/m/Y" }}{% else %}Non fournie{% endif %}</td>
+    </tr>
+    <tr>
+        <td><strong>Lieu :</strong></td>
+        <td>{{ devis.client_address }}</td>
+    </tr>
+    <tr>
+        <td><strong>Photobooth :</strong></td>
+        <td>{{ photobooth.name }}</td>
+    </tr>
+    <tr>
+        <td><strong>Description :</strong></td>
+        <td>{{ photobooth.description }}</td>
+    </tr>
+</table>
+
+<!-- TABLEAU DES PRIX -->
+<h2>Tarification</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th class="right">Qté</th>
+            <th class="right">PU HTVA</th>
+            <th class="right">Total HTVA</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{ photobooth.name }}</td>
+            <td class="right">1</td>
+            <td class="right">{{ devis.prix_ht }}</td>
+            <td class="right">{{ devis.prix_ht }}</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- TOTAUX -->
+<table style="margin-top:10px;">
+    <tr>
+        <td class="right bold">Sous-total HTVA :</td>
+        <td class="right">{{ devis.prix_ht }} €</td>
+    </tr>
+    <tr>
+        <td class="right bold">TVA ({{ devis.tva }}%) :</td>
+        <td class="right">{{ tva_amount|floatformat:2 }} €</td>
+    </tr>
+    <tr>
+        <td class="right bold">TOTAL TVAC :</td>
+        <td class="right bold">{{ devis.prix_ttc }} €</td>
+    </tr>
+</table>
+
+<!-- CONDITIONS -->
+<h2>Conditions</h2>
+
+<table>
+    <tr>
+        <td><strong>Caution :</strong></td>
+        <td>{{ photobooth.caution }} € (non encaissé, demandé le jour de l'installation)</td>
+    </tr>
+    <tr>
+        <td><strong>Paiement :</strong></td>
+        <td>30% d'acompte — Solde sous 14 jours après facture</td>
+    </tr>
+    <tr>
+        <td><strong>Horaires :</strong></td>
+        <td>Mise à disposition le {% if event_date %}{{ event_date|date:"d/m/Y" }}{% else %}---{% endif %}</td>
+    </tr>
+    <tr>
+        <td><strong>Responsabilité :</strong></td>
+        <td>Le client assure la sécurité du matériel durant la prestation</td>
+    </tr>
+</table>
+
+<!-- SIGNATURES -->
+<h2>Signatures</h2>
+
+<table>
+    <tr>
+        <td>
+            <strong>Client :</strong><br>
+            Nom, Fonction, Signature<br><br>
+            _______________________________
+        </td>
+        <td>
+            <strong>Prestataire :</strong><br>
+            IdealBooth<br><br>
+            _______________________________
+        </td>
+    </tr>
+</table>
+
+<!-- FOOTER -->
+<div class="footer">
+    <p>Merci pour votre confiance.</p>
+</div>
+
+</body>
+</html>

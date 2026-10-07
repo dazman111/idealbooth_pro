@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 bg-white shadow-xl rounded-xl p-8">
+
+    <h1 class="text-3xl font-bold mb-6">
+        {% trans "Facture" %} {{ invoice.numero }}
+    </h1>
+
+    <p><strong>{% trans "Date" %} :</strong> {{ invoice.date_creation|date:"d/m/Y" }}</p>
+
+    <h2 class="text-xl font-semibold mt-6 mb-3">{% trans "Entreprise" %}</h2>
+    <p>{{ invoice.devis.company_name }}</p>
+    <p>{{ invoice.devis.company_address }}</p>
+    <p>{{ invoice.devis.company_vat_number }}</p>
+
+    <h2 class="text-xl font-semibold mt-6 mb-3">{% trans "Montants" %}</h2>
+    <p><strong>{% trans "HT" %} :</strong> {{ invoice.montant_ht }} €</p>
+    <p><strong>{% trans "TTC" %} :</strong> {{ invoice.montant_ttc }} €</p>
+
+    <a href="{% url 'accounts:invoice_pdf' invoice.id %}"
+       class="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg">
+        {% trans "Télécharger PDF" %}
+    </a>
+
+</div>
+{% endblock %}

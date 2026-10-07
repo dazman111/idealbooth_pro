@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="p-8">
+
+    <!-- Bouton retour -->
+    <a href="{% url 'accounts:entreprise_dashboard' %}"
+       class="inline-flex items-center mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+        ← {% trans "Retour" %}
+    </a>
+
+    <h1 class="text-3xl font-bold mb-8 text-gray-800">
+        {% trans "Mes réservations" %}
+    </h1>
+
+    {% if reservations %}
+        <div class="space-y-4">
+
+            {% for r in reservations %}
+                <div class="p-6 bg-white shadow-lg rounded-xl border border-gray-200 hover:shadow-xl transition-all duration-200">
+
+                    <div class="flex justify-between items-center">
+
+                        <!-- Infos réservation -->
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-800">
+                                {{ r.photobooth.name }}
+                            </h2>
+
+                            <p class="text-gray-600 mt-1">
+                                📅 Du 
+                                <span class="font-medium">{{ r.start_date|date:"d/m/Y" }}</span>
+                                au 
+                                <span class="font-medium">{{ r.end_date|date:"d/m/Y" }}</span>
+                            </p>
+
+                            {% if r.event_type %}
+                            <p class="text-gray-600 mt-1">
+                                {% trans "Événement" %} : <span class="font-medium">{{ r.event_type }}</span>
+                            </p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Bouton annuler -->
+                        <div>
+                            <a href="{% url 'accounts:cancel_reservation' r.id %}"
+                               class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                                {% trans "Annuler" %}
+                            </a>
+                        </div>
+
+                    </div>
+
+                </div>
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <p class="text-gray-600 text-lg">
+            {%trans "Aucune réservation pour le moment." %}
+        </p>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

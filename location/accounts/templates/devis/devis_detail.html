@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Devis {{ devis.numero }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 bg-white dark:bg-gray-800 shadow-xl rounded-xl p-8">
+
+    <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-100">
+        Devis Photobooth – {{ devis.numero }}
+    </h1>
+
+    <p class="text-gray-700 dark:text-gray-300 mb-2">
+        <strong>Date :</strong> {{ devis.date_creation|date:"d/m/Y" }}
+    </p>
+
+    <h2 class="text-xl font-semibold mt-6 mb-3 text-gray-800 dark:text-gray-100">
+        Informations Entreprise
+    </h2>
+
+    <p><strong>Nom :</strong> {{ devis.company_name }}</p>
+    <p><strong>Adresse :</strong> {{ devis.company_address }}</p>
+    <p><strong>TVA :</strong> {{ devis.company_vat_number }}</p>
+
+    <h2 class="text-xl font-semibold mt-6 mb-3 text-gray-800 dark:text-gray-100">
+        Détails de la prestation
+    </h2>
+
+    <p>{{ devis.description }}</p>
+    <p><strong>Durée :</strong> {{ devis.duree }} heures</p>
+
+    <h2 class="text-xl font-semibold mt-6 mb-3 text-gray-800 dark:text-gray-100">
+        Tarification
+    </h2>
+
+    <p><strong>Prix HT :</strong> {{ devis.prix_ht }} €</p>
+    <p><strong>TVA :</strong> {{ devis.tva }} %</p>
+    <p class="text-2xl font-bold mt-2"><strong>Total TTC :</strong> {{ devis.prix_ttc }} €</p>
+
+    <a href="{% url 'accounts:devis_pdf' devis.id %}"
+   class="inline-block mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+    Télécharger le PDF
+    </a>
+
+</div>
+{% endblock %}

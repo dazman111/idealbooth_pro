@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <h1 class="fw-bold mb-4 text-3xl bg-gradient-to-r from-blue-600 to-yellow-500 bg-clip-text text-transparent">
+        {% trans "Mes devis" %}
+    </h1>
+
+    {% if devis %}
+    <div class="row g-4">
+
+        {% for d in devis %}
+        <div class="col-md-6 col-lg-4">
+
+            <div class="card shadow-sm border border-gray-200 hover:shadow-lg transition rounded-xl overflow-hidden">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title fw-bold text-gray-800">{{ d.numero }}</h5>
+
+                        {% if d.status == "paid" %}
+                        <span class="badge bg-success bg-opacity-25 text-success px-3 py-2 rounded-pill">
+                            {% trans "Payé" %}
+                        </span>
+                        {% else %}
+                        <span class="badge bg-warning bg-opacity-25 text-warning px-3 py-2 rounded-pill">
+                            {% trans "En attente" %}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="text-muted mb-1">
+                        <strong>{% trans "Date :" %}</strong> {{ d.date_creation|date:"d/m/Y" }}
+                    </p>
+
+                    <p class="text-muted mb-1">
+                        <strong>{% trans "Entreprise :" %}</strong> {{ d.company_name }}
+                    </p>
+
+                    <p class="text-muted mb-3">
+                        <strong>{% trans "Total TTC :" %}</strong>
+                        <span class="text-blue-600 fw-bold">{{ d.prix_ttc }} €</span>
+                    </p>
+
+                    <div class="d-flex justify-content-between mt-4">
+
+                        <a href="{% url 'accounts:devis_pdf' d.id %}"
+                           class="btn btn-primary px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition">
+                            {% trans "Télécharger PDF" %}
+                        </a>
+
+                        <a href="{% url 'accounts:generer_devis' %}"
+                        class="btn btn-outline-secondary px-4 py-2 rounded-lg">
+                            Nouveau devis
+                        </a>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="alert alert-warning text-center py-4 rounded-lg shadow-sm">
+        {% trans "Aucun devis trouvé." %}
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
