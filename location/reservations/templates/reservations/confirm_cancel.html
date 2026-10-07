@@ -1,6 +1,14 @@
 <div class="container mt-5">
     <h2 class="mb-4">Confirmer l'annulation</h2>
-    <p>Êtes-vous sûr de vouloir annuler votre réservation pour le photobooth {{ reservation.photobooth.name }} le {{ reservation.date }} ?</p>
+
+    <p>
+        Êtes-vous sûr de vouloir annuler votre réservation pour le photobooth 
+        <strong>{{ reservation.photobooth.name }}</strong>
+        du 
+        <strong>{{ reservation.start_date|date:"d/m/Y H:i" }}</strong>
+        au 
+        <strong>{{ reservation.end_date|date:"d/m/Y H:i" }}</strong> ?
+    </p>
 
     <form method="POST">
         {% csrf_token %}

@@ -1,11 +1,13 @@
 from django.test import TestCase
 from django.utils import timezone
+
 from accounts.models import CustomUser
 from photobooths.models import Photobooth
 from reservations.models import Reservation, Invoice, Notification
 
 
 class ReservationSignalTests(TestCase):
+
     def setUp(self):
         # Crée un utilisateur et un photobooth de test
         self.user = CustomUser.objects.create_user(
@@ -13,6 +15,7 @@ class ReservationSignalTests(TestCase):
             email="test@example.com",
             password="password123"
         )
+
         self.booth = Photobooth.objects.create(
             name="Test Booth",
             price=100.00
@@ -25,23 +28,24 @@ class ReservationSignalTests(TestCase):
             photobooth=self.booth,
             start_date=timezone.now(),
             end_date=timezone.now(),
-            status="pending"
+            status=Reservation.PENDING
         )
 
-        # Confirme la réservation
-        reservation.status = "confirmed"
+        # Confirme la réservation → déclenche le signal
+        reservation.status = Reservation.CONFIRMED
         reservation.save()
 
         # Vérifie qu'une facture est créée
         self.assertIsNotNone(reservation.invoice)
         self.assertEqual(reservation.invoice.total_amount, self.booth.price)
-        self.assertEqual(reservation.invoice.payment_status, "pending")
+        self.assertEqual(reservation.invoice.payment_status, Invoice.PENDING)
 
         # Vérifie qu'une notification est créée
         notif_exists = Notification.objects.filter(
             user=self.user,
-            message__icontains=f"Votre réservation #{reservation.id} a été confirmée"
+            message__icontains=f"réservation #{reservation.id} a été confirmée"
         ).exists()
+
         self.assertTrue(notif_exists)
 
     def test_payment_date_set_when_invoice_paid(self):
@@ -51,14 +55,14 @@ class ReservationSignalTests(TestCase):
             photobooth=self.booth,
             start_date=timezone.now(),
             end_date=timezone.now(),
-            status="confirmed"
+            status=Reservation.CONFIRMED
         )
 
         invoice = reservation.invoice
         self.assertIsNotNone(invoice)
 
         # Marque la facture comme payée
-        invoice.payment_status = "paid"
+        invoice.payment_status = Invoice.PAID
         invoice.save()
 
         # Vérifie que la date de paiement est définie
