@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 px-4">
+
+    <h2 class="text-3xl font-bold mb-6">📍 Informations de livraison</h2>
+
+    <form method="post" class="space-y-8">
+        {% csrf_token %}
+        {{ formset.management_form }}
+
+        {% for form in formset %}
+            <div class="bg-white p-6 rounded-xl shadow border">
+                <h3 class="font-semibold mb-4">
+                    {{ form.instance.photobooth.name }} — {{ form.instance.start_date }}
+                </h3>
+
+                {{ form.id }}
+
+                <div class="mb-4">
+                    <label class="block font-medium mb-1">Adresse de livraison</label>
+                    <input type="text" name="{{ form.adresse_livraison.html_name }}"
+                           value="{{ form.adresse_livraison.value|default:'' }}"
+                           class="w-full border rounded-lg px-3 py-2" required>
+                </div>
+
+                <div>
+                    <label class="block font-medium mb-1">Heure de livraison</label>
+                    <input type="time" name="{{ form.heure_livraison.html_name }}"
+                           value="{{ form.heure_livraison.value|default:'' }}"
+                           class="w-full border rounded-lg px-3 py-2" required>
+                </div>
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium">
+            Continuer vers la confirmation
+        </button>
+    </form>
+
+</div>
+{% endblock %}
