@@ -1,42 +1,56 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>🎭 Gestion des accessoires</h2>
+<div class="max-w-5xl mx-auto mt-10 px-4 pb-32">
 
-    <a href="{% url 'admin_panel:add_accessory' %}" class="btn btn-success mb-3">➕ Ajouter un accessoire</a>
+    <div class="flex items-center justify-between mb-8">
+        <a href="{% url 'admin_panel:admin_dashboard' %}"
+           class="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 transition">
+            ⬅ Retour au Dashboard
+        </a>
 
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Image</th>
-                <th>Nom</th>
-                <th>Prix</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for acc in accessories %}
-            <tr>
-                <td>
-                    {% if acc.image %}
-                        <img src="{{ acc.image.url }}" width="60">
-                    {% else %}
-                        —
-                    {% endif %}
-                </td>
-                <td>{{ acc.name }}</td>
-                <td>{{ acc.price }} €</td>
-                <td>
-                    <a href="{% url 'admin_panel:edit_accessory' acc.pk %}" class="btn btn-warning btn-sm">Modifier</a>
-                    <a href="{% url 'admin_panel:delete_accessory' acc.pk %}" class="btn btn-danger btn-sm"
-                       onclick="return confirm('Supprimer cet accessoire ?')">Supprimer</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="4" class="text-center">Aucun accessoire enregistré.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <h1 class="text-3xl font-extrabold text-primary">🎨 Gestion des accessoires</h1>
+
+        <a href="{% url 'admin_panel:add_accessory' %}"
+           class="px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary/80 transition">
+            ➕ Ajouter un accessoire
+        </a>
+    </div>
+
+    <div class="overflow-x-auto bg-card shadow-xl rounded-xl border border-primary/20">
+        <table class="min-w-full text-left text-base">
+            <thead>
+                <tr class="border-b">
+                    <th class="p-3">Image</th>
+                    <th class="p-3">Nom</th>
+                    <th class="p-3">Photobooth</th>
+                    <th class="p-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for accessory in accessories %}
+                <tr class="border-b">
+                    <td class="p-3">
+                        {% if accessory.image %}
+                            <img src="{{ accessory.image.url }}" alt="{{ accessory.name }}" class="w-16 h-16 object-cover rounded">
+                        {% endif %}
+                    </td>
+                    <td class="p-3">{{ accessory.name }}</td>
+                    <td class="p-3">{{ accessory.photobooth.name|default:"—" }}</td>
+                    <td class="p-3 space-x-2">
+                        <a href="{% url 'admin_panel:edit_accessory' accessory.pk %}" class="text-blue-600 hover:underline">Modifier</a>
+                        <form method="post" action="{% url 'admin_panel:delete_accessory' accessory.pk %}" class="inline" onsubmit="return confirm('Supprimer cet accessoire ?');">
+                            {% csrf_token %}
+                            <button type="submit" class="text-red-600 hover:underline">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="p-3 text-center text-gray-500">Aucun accessoire pour le moment.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
 </div>
 {% endblock %}

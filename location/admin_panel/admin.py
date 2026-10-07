@@ -5,6 +5,8 @@ from django.urls import reverse
 from reservations.models import Reservation, Invoice
 from .views import generate_invoice
 from .models import Accessory, Message
+from .models import Notification
+
 
 # Gestion des factures
 @admin.register(Invoice)
@@ -31,3 +33,25 @@ class MessageAdmin(admin.ModelAdmin):
     search_fields = ('subject', 'body', 'sender__email', 'recipient__email')
     actions = [mark_as_read, mark_as_unread]
 
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = (
+        'photobooth',
+        'title',
+        'is_read',
+        'created_at',
+    )
+
+    list_filter = (
+        'is_read',
+        'created_at',
+    )
+
+    search_fields = (
+        'title',
+        'message',
+        'photobooth__name',
+    )
+
+    ordering = ('-created_at',)

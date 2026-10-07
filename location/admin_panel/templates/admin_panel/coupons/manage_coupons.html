@@ -1,40 +1,97 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Gestion des coupons</h1>
-<a href="{% url 'admin_panel:admin_add_coupon' %}" class="btn btn-primary">➕ Ajouter un coupon</a>
-<a href="{% url 'admin_panel:admin_dashboard' %}" class="btn btn-secondary mb-3">
-    ⬅ Retour au Dashboard
-</a>
->
 
+<div class="max-w-6xl mx-auto mt-10 px-4 pb-32">
 
-<table class="table">
-  <thead>
-    <tr>
-      <th>Code</th>
-      <th>Type</th>
-      <th>Valeur</th>
-      <th>Début</th>
-      <th>Fin</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for coupon in coupons %}
-    <tr>
-      <td>{{ coupon.code }}</td>
-      <td>{{ coupon.get_discount_type_display }}</td>
-      <td>{{ coupon.discount_value }}</td>
-      <td>{{ coupon.date_debut }}</td>
-      <td>{{ coupon.date_fin }}</td>
-      <td>
-        <a href="{% url 'admin_panel:admin_edit_coupon' coupon.id %}" class="btn btn-warning">✏️ Modifier</a>
-        <a href="{% url 'admin_panel:admin_delete_coupon' coupon.id %}" class="btn btn-danger">🗑️ Supprimer</a>
-      </td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="6">Aucun coupon disponible.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+    <!-- HEADER -->
+    <div class="flex items-center justify-between mb-8">
+        <a href="{% url 'admin_panel:admin_dashboard' %}"
+           class="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 transition shadow-sm">
+            ⬅ Retour au Dashboard
+        </a>
+
+        <h1 class="text-4xl font-extrabold text-primary flex items-center gap-2">
+            <span>🎟️</span> Gestion des coupons
+        </h1>
+
+        <a href="{% url 'admin_panel:add_coupon' %}"
+           class="px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary/80 transition shadow-md">
+            ➕ Ajouter un coupon
+        </a>
+    </div>
+
+    <!-- TABLEAU -->
+    <div class="overflow-x-auto bg-card shadow-xl rounded-xl border border-primary/20">
+        <table class="min-w-full text-left text-base">
+
+            <!-- EN-TÊTE -->
+            <thead class="bg-primary text-white rounded-t-xl">
+                <tr>
+                    <th class="px-4 py-3 font-semibold">Code</th>
+                    <th class="px-4 py-3 font-semibold">Type</th>
+                    <th class="px-4 py-3 font-semibold">Valeur</th>
+                    <th class="px-4 py-3 font-semibold">Début</th>
+                    <th class="px-4 py-3 font-semibold">Fin</th>
+                    <th class="px-4 py-3 font-semibold text-center">Actions</th>
+                </tr>
+            </thead>
+
+            <!-- LIGNES -->
+            <tbody>
+                {% for coupon in coupons %}
+                <tr class="border-b border-primary/10 hover:bg-secondary/40 transition">
+
+                    <td class="px-4 py-3 font-medium">{{ coupon.code }}</td>
+
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded-full text-sm font-semibold
+                            {% if coupon.discount_type == 'percentage' %}
+                                bg-blue-100 text-blue-700
+                            {% else %}
+                                bg-green-100 text-green-700
+                            {% endif %}
+                        ">
+                            {{ coupon.get_discount_type_display }}
+                        </span>
+                    </td>
+
+                    <td class="px-4 py-3">{{ coupon.discount_value }}</td>
+                    <td class="px-4 py-3">{{ coupon.date_debut }}</td>
+                    <td class="px-4 py-3">{{ coupon.date_fin }}</td>
+
+                    <td class="px-4 py-3 flex gap-3 justify-center">
+
+                        <!-- MODIFIER -->
+                        <a href="{% url 'admin_panel:admin_edit_coupon' coupon.id %}"
+                           class="px-3 py-1 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition shadow-sm">
+                            ✏️ Modifier
+                        </a>
+
+                        <!-- SUPPRIMER -->
+                        <form method="post" action="{% url 'admin_panel:admin_delete_coupon' coupon.id %}"
+                            onsubmit="return confirm('Voulez-vous vraiment supprimer ce coupon ?');">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 transition shadow-sm">
+                                     Supprimer
+                            </button>
+                        </form>
+
+                    </td>
+                </tr>
+
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-4 py-6 text-center text-secondary text-lg">
+                        Aucun coupon disponible.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+</div>
+
 {% endblock %}

@@ -34,7 +34,6 @@ urlpatterns = [
     path("accessories/edit/<int:pk>/", views.edit_accessory, name="edit_accessory"),
     path("accessories/delete/<int:pk>/", views.delete_accessory, name="delete_accessory"),
 
-
     path('blog/', views.manage_blog, name='manage_blog'),
     
 
@@ -49,10 +48,27 @@ urlpatterns = [
     path("reservations/<int:reservation_id>/facture/", views.admin_facture_detail, name="admin_facture_detail"),
     
     #GESTION DES COUPONS
-    path("coupons/", views.coupon_list, name="admin_coupon_list"),
-    path("coupons/add/", views.add_coupon, name="admin_add_coupon"),
+    path("coupons/", views.manage_coupons, name="admin_coupon_list"),
     path("coupons/edit/<int:coupon_id>/", views.edit_coupon, name="admin_edit_coupon"),
     path("coupons/delete/<int:coupon_id>/", views.delete_coupon, name="admin_delete_coupon"),
+    path("coupons/add/", views.add_coupon, name="add_coupon"),
+
+    #Devis
+    path("devis/", views.manage_devis, name="manage_devis"),
+    path("devis/create/", views.create_devis, name="create_devis"),
+    path("admin/devis/<int:devis_id>/valider/", views.valider_devis, name="admin_valider_devis"),
+    path("admin/devis/<int:devis_id>/valider/", views.valider_devis, name="valider_devis"),
+    path("devis/<int:devis_id>/", views.view_devis, name="view_devis"),
+
+    #NOTIFICATION
+    path('notifications/delete/<int:pk>/', views.adminpanel_delete_notification, name='delete_notification'),
+    path('notifications/read/<int:pk>/', views.adminpanel_read_notification, name='read_notification'),
+
+    #GESTION DES BANNIÈRES PROMO
+    path("banners/", views.banner_list, name="banner_list"),
+    path("banners/add/", views.add_banner, name="add_banner"),
+    path("banners/edit/<int:pk>/", views.edit_banner, name="edit_banner"),
+    path("banners/delete/<int:pk>/", views.delete_banner, name="delete_banner"),
 
     path('api/cancelled-count/', views.cancelled_count_api, name='cancelled_count_api'),
 

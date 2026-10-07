@@ -1,11 +1,86 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Modifier le coupon</h1>
+<div class="max-w-2xl mx-auto mt-10 px-4">
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Enregistrer</button>
-</form>
+    <!-- TITRE -->
+    <h1 class="text-3xl font-bold mb-6 text-primary">Modifier le coupon</h1>
+
+    <!-- FORMULAIRE -->
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <div class="space-y-4">
+
+            <!-- CODE -->
+            <div>
+                <label class="block font-semibold mb-1">Code du coupon</label>
+                <input type="text" name="{{ form.code.name }}" value="{{ form.code.value|default:'' }}"
+                       class="w-full px-3 py-2 rounded border border-gray-300 bg-white text-black">
+            </div>
+
+            <!-- DESCRIPTION -->
+            <div>
+                <label class="block font-semibold mb-1">Description</label>
+                <textarea name="{{ form.description.name }}"
+                          class="w-full px-3 py-2 rounded border border-gray-300 bg-white text-black">{{ form.description.value|default:'' }}</textarea>
+            </div>
+
+            <!-- TYPE -->
+            <div>
+                <label class="block font-semibold mb-1">Type de réduction</label>
+                <select name="{{ form.discount_type.name }}"
+                        class="w-full px-3 py-2 rounded border border-gray-300 bg-white text-black">
+                    {% for value, label in form.fields.discount_type.choices %}
+                        <option value="{{ value }}" {% if form.discount_type.value == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- VALEUR -->
+            <div>
+                <label class="block font-semibold mb-1">Valeur / Pourcentage</label>
+                <input type="number" step="0.01" name="{{ form.discount_value.name }}" value="{{ form.discount_value.value|default:'' }}"
+                       class="w-full px-3 py-2 rounded border border-gray-300 bg-white text-black">
+            </div>
+
+            <!-- DATE DEBUT -->
+            <div>
+                <label class="block font-semibold mb-1">Date de début</label>
+                <input type="date" name="{{ form.date_debut.name }}" value="{{ form.date_debut.value|date:'Y-m-d'|default:'' }}"
+                       class="w-full px-3 py-2 rounded border border-gray-300 bg-white text-black">
+            </div>
+
+            <!-- DATE FIN -->
+            <div>
+                <label class="block font-semibold mb-1">Date de fin</label>
+                <input type="date" name="{{ form.date_fin.name }}" value="{{ form.date_fin.value|date:'Y-m-d'|default:'' }}"
+                       class="w-full px-3 py-2 rounded border border-gray-300 bg-white text-black">
+            </div>
+
+            <!-- UTILISATION MAX -->
+            <div>
+                <label class="block font-semibold mb-1">Utilisation maximale</label>
+                <input type="number" name="{{ form.utilisation_max.name }}" value="{{ form.utilisation_max.value|default:'' }}"
+                       class="w-full px-3 py-2 rounded border border-gray-300 bg-white text-black">
+            </div>
+
+            <!-- ACTIF -->
+            <div class="flex items-center gap-2">
+                <input type="checkbox" name="{{ form.actif.name }}" {% if form.actif.value %}checked{% endif %}
+                       class="w-5 h-5">
+                <label class="font-semibold">Actif</label>
+            </div>
+
+        </div>
+
+        <!-- BOUTON -->
+        <button type="submit"
+                class="px-5 py-2 text-white font-semibold rounded transition bg-[#5B6E9D] hover:bg-[#4a5a82]">
+            Enregistrer
+        </button>
+
+    </form>
+
+</div>
 {% endblock %}

@@ -1,639 +1,574 @@
-{% extends 'base.html' %}
-
-{% block title %}Dashboard Admin{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
 <style>
-/* 🌟 Cartes */
-.card {
-    transition: all 0.3s ease;
-    border: none !important;
-    background: linear-gradient(145deg, #f8f8fa, #f3f4f6);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-}
-.card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+/* Thème clair */
+.theme-light {
+    --primary: #2563eb;
+    --bg: #ffffff;
+    --bg-secondary: #f3f4f6;
+    --card-bg: #ffffff;
+    --text: #111827;
+    --text-secondary: #4b5563;
 }
 
-/* 🧾 Titres des cartes */
-.card-title i {
-    font-size: 1.3rem;
-    margin-right: 8px;
-    vertical-align: middle;
+/* Thème sombre */
+.theme-dark {
+    --primary: #3b82f6;
+    --bg: #111827;
+    --bg-secondary: #1f2937;
+    --card-bg: #1f2937;
+    --text: #f3f4f6;
+    --text-secondary: #9ca3af;
 }
 
-/* 📊 Statistiques */
-.bg-light.border.rounded-3.p-3 {
-    background: #0b7ae9;
-    border: 1px solid #053e77 !important;
-    border-left: 4px solid #0d6efd;
-    transition: all 0.3s ease;
-}
-.bg-light.border.rounded-3.p-3:hover {
-    transform: scale(1.03);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+/* 🌊 Thème Ocean */
+.theme-ocean {
+    --primary: #06b6d4;
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --card-bg: #1e293b;
+    --text: #e0faff;
+    --text-secondary: #94a3b8;
 }
 
-/* 💰 Revenu */
-.bg-white.p-4.rounded.shadow-sm.text-end {
-    background: #940a0a;
-    border-left: 5px solid #198754;
+/* 🟧 Thème Amber */
+.theme-amber {
+    --primary: #f59e0b;
+    --bg: #fff8e1;
+    --bg-secondary: #ffecb3;
+    --card-bg: #fff3cd;
+    --text: #4a3b00;
+    --text-secondary: #7c6a00;
 }
 
-/* 🧾 Table */
-.table thead {
-    background-color: #0a6ed3;
-    font-weight: bold;
-}
-.table td, .table th {
-    vertical-align: middle;
-}
-.table tbody tr:hover {
-    background-color: #f8f9fa;
+/* 🌲 Thème Forest */
+.theme-forest {
+    --primary: #059669;
+    --bg: #0d1f1a;
+    --bg-secondary: #12352b;
+    --card-bg: #12352b;
+    --text: #d1fae5;
+    --text-secondary: #6ee7b7;
 }
 
-/* 🪟 Modal animé */
-#reservationModal {
-    transition: opacity 0.3s ease;
+/* 🌸 Thème Rose */
+.theme-rose {
+    --primary: #fb7185;
+    --bg: #fff1f2;
+    --bg-secondary: #ffe4e6;
+    --card-bg: #ffe4e6;
+    --text: #831843;
+    --text-secondary: #be185d;
 }
-#modalBody {
-    animation: fadeInUp 0.3s ease-in-out forwards;
+
+/* 👑 Thème Luxury */
+.theme-luxury {
+    --primary: #d4af37;
+    --bg: #0a0a0a;
+    --bg-secondary: #111111;
+    --card-bg: #1a1a1a;
+    --text: #f5e6c8;
+    --text-secondary: #c8b273;
 }
-@keyframes fadeInUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
+
+/* Couleurs alternatives */
+.theme-blue   { --primary:#3b82f6; }
+.theme-purple { --primary:#8b5cf6; }
+.theme-green  { --primary:#10b981; }
+.theme-pink   { --primary:#ec4899; }
+
+/* Utilisation */
+.bg-primary     { background-color: var(--primary) !important; }
+.text-primary   { color: var(--primary) !important; }
+.border-primary { border-color: var(--primary) !important; }
+
+.bg-base       { background-color: var(--bg) !important; }
+.bg-secondary  { background-color: var(--bg-secondary) !important; }
+.bg-card       { background-color: var(--card-bg) !important; }
+
+.text-base      { color: var(--text) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
 </style>
 
-<div class="container-fluid px-4 py-5">
-    <!-- Affichage des messages uniquement ici -->
-  {% if messages %}
-    <ul class="messages">
-      {% for message in messages %}
-        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-    <h1 class="mb-4 text-3xl font-semibold text-gray-800">📊 Tableau de bord Administrateur</h1>
-         <!-- 🔽 Place ceci juste après le titre -->
-    <div class="alert alert-warning d-flex align-items-center" role="alert">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      <div>
-        ⚠️ Avant de confirmer une réservation, assurez-vous que le paiement a bien été reçu.
-      </div>
-    </div>
-    <nav class="flex justify-between items-center p-4 bg-gray-800 text-black">
-   <section class="p-4">
-    <h2 class="text-2xl font-semibold mb-4">Notifications Admin</h2>
+<div class="flex min-h-screen overflow-hidden bg-base text-base">
 
-    <ul class="space-y-4">
-        {% for notif in notifications %}
-            <li class="p-4 rounded-lg shadow-md bg-white dark:bg-gray-800 {% if not notif.read %}font-bold{% endif %}">
-                <div class="flex justify-between items-center">
-                    <p>{{ notif.message }}</p>
-                    <small class="text-sm text-gray-500 dark:text-gray-400">
-                        {{ notif.created_at|date:"d/m/Y H:i" }}
-                    </small>
-                </div>
+<!-- SIDEBAR -->
+<aside id="sidebar" class="sidebar fixed top-[80px] bottom-0 left-0 z-50 w-64 bg-card shadow-lg border-r border-primary">
 
-                {% if not notif.read %}
-                    <span class="text-red-600 text-sm mt-1 inline-block">Non lue</span>
-                {% endif %}
-            </li>
-        {% empty %}
-            <li class="text-gray-500">Aucune notification.</li>
-        {% endfor %}
-    </ul>
-</section>
 
-<div class="row g-4 mb-5">
+    <!-- NAVIGATION (descendu proprement) -->
+    <nav class="p-6 space-y-5 pt-24">
 
-    <!-- Card: Accessoires -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card border-0 shadow rounded-3 p-4 h-100">
-            <h5 class="card-title fw-bold mb-2">
-                <i class="bi bi-stars text-info"></i> Accessoires
-            </h5>
-            <a href="{% url 'admin_panel:accessory_list' %}" class="stretched-link text-decoration-none text-info">
-                Gérer les accessoires
-            </a>
+        <a href="{% url 'admin_panel:admin_dashboard' %}" 
+           class="block font-semibold text-lg hover:text-primary transition">
+            📊 Dashboard
+        </a>
+
+        <a href="{% url 'admin_panel:accessory_list' %}" 
+           class="block font-semibold text-lg hover:text-primary transition">
+            ✨ Accessoires
+        </a>
+
+        <a href="{% url 'admin_panel:manage_blog' %}" 
+           class="block font-semibold text-lg hover:text-primary transition">
+            📝 Blog
+        </a>
+
+        <a href="{% url 'admin_panel:admin_coupon_list' %}" 
+           class="block font-semibold text-lg hover:text-primary transition">
+            🎟️ Coupons
+        </a>
+
+        <a href="{% url 'admin_panel:banner_list' %}" 
+           class="block font-semibold text-lg hover:text-primary transition">
+            📢 Bannières promo
+        </a>
+
+        <a href="{% url 'admin_panel:admin_messages' %}" 
+           class="block font-semibold text-lg hover:text-primary transition">
+            📨 Messages
+        </a>
+
+        <a href="{% url 'admin_panel:manage_photobooths' %}" 
+           class="block font-semibold text-lg hover:text-primary transition">
+            📸 Photobooths
+        </a>
+
+        <a href="{% url 'admin_panel:manage_reservations' %}" 
+           class="block font-semibold text-lg hover:text-primary transition">
+            📅 Réservations
+        </a>
+
+        <a href="{% url 'admin_panel:manage_users' %}" 
+           class="block font-semibold text-lg hover:text-primary transition">
+            👥 Utilisateurs
+        </a>
+
+        <!-- 📄 DEVIS (NOUVEAU) -->
+        <a href="{% url 'admin_panel:manage_devis' %}" 
+        class="block font-semibold text-lg hover:text-primary transition">
+            📄 Devis
+        </a>
+
+        <!-- LOGOUT -->
+        <a href="{% url 'admin_panel:logout' %}" 
+           class="block p-3 mt-10 rounded text-red-500 font-bold hover:bg-red-200 transition text-lg">
+            🚪 Déconnexion
+        </a>
+
+    </nav>
+</aside>
+
+
+    <!-- CONTENU -->
+    <main class="flex-1 p-8 ml-64">
+
+        <!-- HEADER -->
+        <div class="flex items-center justify-between mb-8 mt-10">
+            <h1 class="text-3xl font-bold">📊 Tableau de bord Administrateur</h1>
+
+            <button id="themeToggle" class="p-2 text-2xl rounded bg-secondary">
+                🎨
+            </button>
         </div>
-    </div>
+        
+        <!-- NOTIFICATIONS -->
+        <section class="mb-10">
+            <h2 class="mb-4 text-2xl font-semibold">Notifications Admin</h2>
 
-    <!-- Card: Blog -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card border-0 shadow rounded-3 p-4 h-100">
-            <h5 class="card-title fw-bold mb-2">
-                <i class="bi bi-journal-text text-info"></i> Blog
-            </h5>
-            <a href="{% url 'admin_panel:manage_blog' %}" class="stretched-link text-decoration-none text-info">
-                Gérer le blog
-            </a>
-        </div>
-    </div>
+            <ul class="space-y-4">
+                {% for notif in notifications %}
+                    <li class="relative p-4 bg-card rounded-lg shadow border border-primary/20">
+                        <form method="post" action="{% url 'admin_panel:delete_notification' notif.id %}"
+                            class="absolute top-2 right-2">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="text-red-500 hover:text-red-700 text-xl font-bold"
+                                    style="background:none; border:none; padding:0; cursor:pointer;">
+                                &times;
+                            </button>
+                        </form>
+                        <a href="{% url 'admin_panel:read_notification' notif.id %}" class="block">
+                            <div class="flex justify-between">
+                                <p>{{ notif.message }}</p>
+                                <small class="text-secondary">
+                                    {{ notif.created_at|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
 
-    <!-- Card: Coupons -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card border-0 shadow rounded-3 p-4 h-100">
-            <h5 class="card-title fw-bold mb-2">
-                <i class="bi bi-ticket-detailed text-primary"></i> Coupons
-            </h5>
-            <a href="{% url 'admin_panel:admin_coupon_list' %}" class="stretched-link text-decoration-none text-primary">
-                Gérer les coupons
-            </a>
-        </div>
-    </div>
+                            {% if not notif.read %}
+                                <span class="text-sm text-red-500">Non lue</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                {% empty %}
+                    <li class="text-secondary">Aucune notification.</li>
+                {% endfor %}
+            </ul>
+        </section>
 
-    <!-- Card: Messages -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card border-0 shadow rounded-3 p-4 h-100">
-            <h5 class="card-title fw-bold mb-2">
-                <i class="bi bi-envelope text-warning"></i> Messages
-            </h5>
-            <a href="{% url 'admin_panel:admin_messages' %}" class="stretched-link text-decoration-none text-warning">
-                Gérer les messages
-            </a>
-        </div>
-    </div>
+        <!-- STATISTIQUES -->
+        <section class="grid grid-cols-2 gap-6 mb-10 md:grid-cols-4">
+            {% for icon, label, value in stats %}
+            <div class="p-4 text-center text-white bg-primary rounded shadow">
 
-    <!-- Card: Photobooths -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card border-0 shadow rounded-3 p-4 h-100">
-            <h5 class="card-title fw-bold mb-2">
-                <i class="bi bi-camera text-danger"></i> Photobooths
-            </h5>
-            <a href="{% url 'admin_panel:manage_photobooths' %}" class="stretched-link text-decoration-none text-danger">
-                Gérer les modèles
-            </a>
-        </div>
-    </div>
+                <div class="text-3xl">{{ icon }}</div>
+                <div class="font-semibold">{{ label }}</div>
+                <div class="text-xl">{{ value }}</div>
+            </div>
+            {% endfor %}
+        </section>
 
-    <!-- Card: Réservations -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card border-0 shadow rounded-3 p-4 h-100">
-            <h5 class="card-title fw-bold mb-2">
-                <i class="bi bi-calendar-check text-primary"></i> Réservations
-            </h5>
-            <a href="{% url 'admin_panel:manage_reservations' %}" class="stretched-link text-decoration-none text-primary">
-                Gérer les réservations
-            </a>
-        </div>
-    </div>
+        <!-- REVENU -->
+        <section class="p-6 mb-10 text-right text-base bg-primary border-l-4 border-primary rounded shadow">
+            <strong>💰 Revenu Total :</strong>
+            <span class="text-3xl">{{ total_revenue }} €</span>
+        </section>
 
-    <!-- Card: Utilisateurs -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card border-0 shadow rounded-3 p-4 h-100">
-            <h5 class="card-title fw-bold mb-2">
-                <i class="bi bi-people-fill text-success"></i> Utilisateurs
-            </h5>
-            <a href="{% url 'admin_panel:manage_users' %}" class="stretched-link text-decoration-none text-success">
-                Voir les utilisateurs
-            </a>
-        </div>
-    </div>
+        <!-- GRAPHIQUES -->
+        <section class="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div class="bg-card p-4 rounded shadow border border-primary/20">
+                <canvas id="reservationChart"></canvas>
+            </div>
 
+            <div class="bg-card p-4 rounded shadow border border-primary/20">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </section>
+
+    </main>
 </div>
 
-    <div class="row g-4 mb-5">
-        <!-- Statistiques -->
-        <div class="col-6 col-md-3">
-            <div class="bg-light border rounded-3 p-3 text-center shadow-sm">
-                <div class="fs-4">👥</div>
-                <div class="fw-semibold">Utilisateurs</div>
-                <div class="fs-5 text-primary">{{ total_users }}</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="bg-light border rounded-3 p-3 text-center shadow-sm">
-                <div class="fs-4">📦</div>
-                <div class="fw-semibold">Réservations</div>
-                <div class="fs-5 text-dark">{{ total_reservations }}</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="bg-light border rounded-3 p-3 text-center shadow-sm">
-                <div class="fs-4">✅</div>
-                <div class="fw-semibold">Confirmées</div>
-                <div class="fs-5 text-success">{{ total_confirmed }}</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="bg-light border rounded-3 p-3 text-center shadow-sm">
-                <div class="fs-4" aria-label="Annulées">❌</div>
-                <div class="fw-semibold">Annulées</div>
-                <span id="cancelled-count" role="status" aria-live="polite">{{ total_cancelled }}</span>
-            </div>
-        </div>
-    </div>
+<!-- Données pour les graphiques -->
+<script id="labels" type="application/json">
+    {{ reservations_by_month|safe }}
+</script>
 
-    <div class="bg-white p-4 rounded shadow-sm mb-5 text-end">
-        <strong>💰 Revenu Total :</strong> <span class="fs-4 text-success">{{ total_revenue }} €</span>
-    </div>
+<script id="labels2" type="application/json">
+    {{ revenue_by_month|safe }}
+</script>
 
-    <!-- Graphiques -->
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <canvas id="reservationChart" height="100"></canvas>
-        </div>
-        <div class="col-md-6 mb-4">
-            <canvas id="revenueChart" height="100"></canvas>
-        </div>
-    </div>
-
-    <!-- Tableau des réservations AJAX -->
-
-    {{ reservations_by_month|json_script:"labels" }}
-    {{ revenue_by_month|json_script:"labels2" }}
-</div>
 {% endblock %}
+
+
 
 {% block scripts %}
 {{ block.super }}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    // Récupération des données JSON injectées par Django
+document.addEventListener("DOMContentLoaded", () => {
+
+    const html = document.documentElement;
+    const btn = document.getElementById("themeToggle");
+
+    if (!btn) {
+        console.error("❌ Bouton #themeToggle introuvable !");
+        return;
+    }
+
+    const themes = [
+        "theme-light",
+        "theme-dark",
+        "theme-blue",
+        "theme-purple",
+        "theme-green",
+        "theme-pink"
+    ];
+
+    let currentTheme = localStorage.getItem("admin-theme") || "theme-light";
+    html.classList.add(currentTheme);
+
+    function updateThemeIcon() {
+        btn.textContent = currentTheme === "theme-dark" ? "☀️" : "🎨";
+    }
+    updateThemeIcon();
+
+    btn.onclick = () => {
+        html.classList.remove(currentTheme);
+        let index = themes.indexOf(currentTheme);
+        index = (index + 1) % themes.length;
+        currentTheme = themes[index];
+        html.classList.add(currentTheme);
+        localStorage.setItem("admin-theme", currentTheme);
+        updateThemeIcon();
+    };
+
+});
+
+// UTILS
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// 🔔 TOAST
+function showToast(message, isError = false) {
+    const toast = document.createElement("div");
+    toast.className = `
+        fixed bottom-5 right-5 px-4 py-3 rounded shadow-lg text-white text-sm
+        ${isError ? "bg-red-600" : "bg-green-600"}
+        animate-fade-in
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// MODAL
+let reservationModal, modalBody;
+
+function closeModal() {
+    modalBody.classList.add('scale-95');
+    modalBody.classList.remove('scale-100');
+    reservationModal.classList.add('opacity-0', 'pointer-events-none');
+    reservationModal.classList.remove('opacity-100');
+
+    setTimeout(() => {
+        reservationModal.style.display = 'none';
+        modalBody.innerHTML = '';
+    }, 300);
+}
+
+function showInfoModal(message, isError = false) {
+    modalBody.innerHTML = `
+        <h3 class="text-xl font-semibold mb-4 ${isError ? 'text-red-600' : 'text-green-600'}">
+            ${isError ? "Erreur" : "Succès"}
+        </h3>
+        <p class="mb-6">${message}</p>
+        <div class="flex justify-end">
+            <button onclick="closeModal()" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                Fermer
+            </button>
+        </div>
+    `;
+    reservationModal.style.display = 'flex';
+    void reservationModal.offsetWidth;
+    reservationModal.classList.remove('opacity-0', 'pointer-events-none');
+    reservationModal.classList.add('opacity-100', 'pointer-events-auto');
+    modalBody.classList.remove('scale-95');
+    modalBody.classList.add('scale-100');
+}
+
+function showConfirmationModal(message, onConfirm) {
+    modalBody.innerHTML = `
+        <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Confirmation requise</h3>
+        <p class="mb-6 text-gray-600 dark:text-gray-300">${message}</p>
+        <div class="flex justify-end gap-3">
+            <button id="confirmNo" class="px-5 py-2 bg-gray-200 dark:bg-gray-700 rounded-md">Non</button>
+            <button id="confirmYes" class="px-5 py-2 bg-blue-600 text-white rounded-md">Oui</button>
+        </div>
+    `;
+    reservationModal.style.display = 'flex';
+    void reservationModal.offsetWidth;
+    reservationModal.classList.remove('opacity-0', 'pointer-events-none');
+    reservationModal.classList.add('opacity-100', 'pointer-events-auto');
+    modalBody.classList.remove('scale-95');
+    modalBody.classList.add('scale-100');
+
+    document.getElementById("confirmYes").onclick = () => {
+        closeModal();
+        onConfirm();
+    };
+    document.getElementById("confirmNo").onclick = closeModal;
+}
+
+// 📊 GRAPHIQUES
+function initCharts() {
     const reservationsData = JSON.parse(document.getElementById('labels').textContent);
     const revenueData = JSON.parse(document.getElementById('labels2').textContent);
 
-    // Graphique des réservations mensuelles
-    const reservationCtx = document.getElementById('reservationChart').getContext('2d');
-    new Chart(reservationCtx, {
+    new Chart(document.getElementById('reservationChart'), {
         type: 'bar',
         data: {
-            labels: reservationsData.map(item => new Date(item.month).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })),
+            labels: reservationsData.map(i =>
+                new Date(i.month).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+            ),
             datasets: [{
                 label: 'Réservations',
-                data: reservationsData.map(item => item.count),
+                data: reservationsData.map(i => i.count),
                 backgroundColor: 'rgba(54, 162, 235, 0.5)',
                 borderColor: 'rgb(54, 162, 235)',
                 borderWidth: 1
             }]
-        },
-        options: { responsive: true }
+        }
     });
 
-    // Graphique des revenus mensuels
-    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-    new Chart(revenueCtx, {
+    new Chart(document.getElementById('revenueChart'), {
         type: 'line',
         data: {
-            labels: revenueData.map(item => new Date(item.month).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })),
+            labels: revenueData.map(i =>
+                new Date(i.month).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+            ),
             datasets: [{
                 label: 'Revenus (€)',
-                data: revenueData.map(item => item.total),
+                data: revenueData.map(i => i.total),
                 backgroundColor: 'rgba(40, 167, 69, 0.2)',
                 borderColor: 'rgba(40, 167, 69, 1)',
                 tension: 0.4,
                 fill: true
             }]
-        },
-        options: { responsive: true }
+        }
     });
-});
-</script>
+}
 
-<script>
-    // Fonction pour récupérer les valeurs des cookies, notamment le jeton CSRF
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                // Does this cookie string begin with the name we want?
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
+// 🔄 COMPTEUR ANNULÉES
+function refreshCancelledCount() {
+    fetch("{% url 'admin_panel:cancelled_count_api' %}", {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        credentials: "include"
+    })
+    .then(r => r.json())
+    .then(data => {
+        const el = document.querySelector("#cancelled-count");
+        if (el) el.textContent = data.cancelled_count;
+    });
+}
 
-    // Déclarer les variables globales pour les éléments du modal
-    let reservationModal;
-    let modalBody;
-
-    // Rend la fonction closeModal accessible globalement pour les boutons dans le modal
-    function closeModal() {
-        if (!reservationModal || !modalBody) {
-            console.error("Modal elements not initialized. Cannot close modal.");
-            return;
-        }
-        modalBody.classList.remove('scale-100');
-        modalBody.classList.add('scale-95');
-        reservationModal.classList.remove('opacity-100');
-        reservationModal.classList.add('opacity-0');
-        setTimeout(() => {
-            reservationModal.style.display = 'none';
-            reservationModal.classList.add('pointer-events-none');
-            modalBody.innerHTML = '';
-        }, 300);
-    }
-
-    // Fonction pour afficher un modal d'information/erreur
-    function showInfoModal(message, isError = false) {
-        if (!reservationModal || !modalBody) {
-            console.error("Modal elements not initialized. Cannot show info modal.");
-            return;
-        }
-
-        modalBody.innerHTML = `
-            <h3 class="text-xl font-semibold mb-4 ${isError ? 'text-red-600' : 'text-green-600'}">${isError ? 'Erreur' : 'Succès'}</h3>
-            <p class="mb-6 text-gray-600">${message}</p>
-            <div class="flex justify-end">
-                <button onclick="closeModal()" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200">Fermer</button>
-            </div>
-        `;
-        reservationModal.style.display = 'flex';
-        void reservationModal.offsetWidth; // Force reflow
-        reservationModal.classList.remove('opacity-0', 'pointer-events-none');
-        reservationModal.classList.add('opacity-100', 'pointer-events-auto');
-        modalBody.classList.remove('scale-95');
-        modalBody.classList.add('scale-100');
-    }
-
-    // Fetches and populates the reservations table
-    function fetchReservationsForDashboard() {
-        // La fonction getCookie est maintenant définie ci-dessus et disponible
-        const csrftoken = getCookie('csrftoken');
-
-        fetch("{% url 'admin_panel:manage_reservations' %}?status=&user=", {
-            method: "GET",
+// 🔧 ACTIONS RÉSERVATIONS
+function confirmerReservation(id, csrftoken) {
+    showConfirmationModal("Confirmer cette réservation ?", () => {
+        fetch("{% url 'admin_panel:update_reservation_status' %}", {
+            method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken,
                 "X-Requested-With": "XMLHttpRequest"
             },
-            credentials: "include"
+            body: JSON.stringify({ id, action: "confirm" })
         })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => { throw new Error(err.detail || `Erreur réseau: ${response.status}`); });
-            }
-            return response.json();
-        })
+        .then(r => r.json())
         .then(data => {
-            const tableContainer = document.querySelector("#reservations-table tbody");
-            if (tableContainer) {
-                tableContainer.innerHTML = ""; // Clear existing content before adding new
-                tableContainer.innerHTML = data.html; 
-                attachActionHandlers(); // Re-attach event listeners to new buttons
-            }
-        })
-        .catch(error => {
-            console.error("Erreur lors du chargement des réservations :", error);
-            showInfoModal(`Impossible de charger les réservations : ${error.message}`, true);
+            if (data.success) {
+                showToast("Réservation confirmée");
+                fetchReservationsForDashboard();
+            } else showToast(data.error, true);
         });
-    }
-
-    // **AJOUT : fonction pour rafraîchir le compteur des réservations annulées**
-    function refreshCancelledCount() {
-        fetch("{% url 'admin_panel:cancelled_count_api' %}", {
-            headers: { "X-Requested-With": "XMLHttpRequest" },
-            credentials: "include"
-        })
-        .then(response => response.json())
-        .then(data => {
-            const el = document.querySelector("#cancelled-count");
-            if (el) el.textContent = data.cancelled_count;
-        })
-        .catch(error => {
-            console.error("Erreur mise à jour compteur annulées :", error);
-        });
-    }
-
-    // Function to show a custom confirmation modal
-    function showConfirmationModal(message, onConfirmCallback) {
-        if (!reservationModal || !modalBody) {
-            console.error("Modal elements not initialized. Cannot show confirmation modal.");
-            return;
-        }
-
-        modalBody.innerHTML = `
-            <h3 class="text-xl font-semibold mb-4 text-gray-800">Confirmation requise</h3>
-            <p class="mb-6 text-gray-600">${message}</p>
-            <div class="flex justify-end gap-3">
-                <button id="confirmNo" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors duration-200">Non</button>
-                <button id="confirmYes" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200">Oui</button>
-            </div>
-        `;
-        reservationModal.style.display = 'flex';
-        void reservationModal.offsetWidth; // Force reflow
-        reservationModal.classList.remove('opacity-0', 'pointer-events-none');
-        reservationModal.classList.add('opacity-100', 'pointer-events-auto');
-        modalBody.classList.remove('scale-95');
-        modalBody.classList.add('scale-100');
-
-        document.getElementById('confirmYes').onclick = () => {
-            closeModal();
-            onConfirmCallback();
-        };
-        document.getElementById('confirmNo').onclick = () => {
-            closeModal();
-        };
-    }
-
-    // Fonctions de confirmation et d'annulation mises à jour
-    function confirmerReservation(id, csrftoken) {
-        showConfirmationModal("Voulez-vous vraiment confirmer cette réservation ?", () => {
-            fetch("{% url 'admin_panel:update_reservation_status' %}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": csrftoken,
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                credentials: "include",
-                body: JSON.stringify({ id: id, action: "confirm" })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.error || `Erreur réseau: ${response.status}`); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    showInfoModal(data.message || "Réservation confirmée !");
-                    fetchReservationsForDashboard();
-                } else {
-                    showInfoModal(`Échec de la confirmation : ${data.error}`, true);
-                }
-            })
-            .catch(error => {
-                console.error("Erreur de confirmation :", error);
-                showInfoModal(`Échec de la confirmation : ${error.message}`, true);
-            });
-        });
-    }
-
-    function annulerReservation(id, csrftoken) {
-        showConfirmationModal("⚠️ Êtes-vous sûr de vouloir annuler cette réservation ?", () => {
-            fetch("{% url 'admin_panel:update_reservation_status' %}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": csrftoken,
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                credentials: "include",
-                body: JSON.stringify({ id: id, action: "cancel" })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.error || `Erreur réseau: ${response.status}`); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    showInfoModal(data.message || "Réservation annulée !");
-                    fetchReservationsForDashboard();
-                    refreshCancelledCount(); // **AJOUT ici pour mettre à jour le compteur annulées**
-                } else {
-                    showInfoModal(`Échec de l'annulation : ${data.error}`, true);
-                }
-            })
-            .catch(error => {
-                console.error("Erreur d'annulation :", error);
-                showInfoModal(`Échec de l'annulation : ${error.message}`, true);
-            });
-        });
-    }
-
-    // NEW FUNCTION: Mark reservation's invoice as paid
-    function markReservationAsPaid(id, csrftoken) {
-        showConfirmationModal("Voulez-vous marquer cette réservation comme payée ?", () => {
-            fetch("{% url 'admin_panel:update_reservation_status' %}", { // Reuse the same endpoint
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": csrftoken,
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                credentials: "include",
-                body: JSON.stringify({ id: id, action: "mark_paid" }) // New action
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.error || `Erreur réseau: ${response.status}`); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    showInfoModal(data.message || "Réservation marquée comme payée !");
-                    fetchReservationsForDashboard(); // Refresh table
-                } else {
-                    showInfoModal(`Échec de la mise à jour du paiement : ${data.error}`, true);
-                }
-            })
-            .catch(error => {
-                console.error("Erreur de mise à jour du paiement :", error);
-                showInfoModal(`Échec de la mise à jour du paiement : ${error.message}`, true);
-            });
-        });
-    }
-    
-    // Attaches event handlers to action buttons in the table
-    function attachActionHandlers() {
-        const csrftoken = getCookie('csrftoken'); // getCookie est maintenant défini
-
-        document.querySelectorAll('.action-btn').forEach(button => {
-            button.removeEventListener('click', handleActionButtonClick);
-            button.addEventListener('click', handleActionButtonClick);
-        });
-    }
-
-    // Centralized click handler for action buttons
-    function handleActionButtonClick(event) {
-        const button = event.currentTarget;
-        const id = button.getAttribute('data-id');
-        const action = button.getAttribute('data-action');
-        const csrftoken = getCookie('csrftoken'); // getCookie est maintenant défini
-
-        if (action === 'details') {
-            fetch(`{% url 'admin_panel:reservation_detail' 0 %}`.replace('0', id), {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    modalBody.innerHTML = data.html;
-                    reservationModal.style.display = 'flex';
-                    void reservationModal.offsetWidth;
-                    reservationModal.classList.remove('opacity-0', 'pointer-events-none');
-                    reservationModal.classList.add('opacity-100', 'pointer-events-auto');
-                    modalBody.classList.remove('scale-95');
-                    modalBody.classList.add('scale-100');
-                } else {
-                    showInfoModal(`Erreur : ${data.error}`, true);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching reservation details:', error);
-                showInfoModal("Impossible de charger les détails de la réservation.", true);
-            });
-        } else if (action === 'invoice') {
-            window.location.href = `{% url 'admin_panel:generate_invoice' 0 %}`.replace('0', id);
-        } else if (action === 'confirm') {
-            confirmerReservation(id, csrftoken);
-        } else if (action === 'cancel') {
-            annulerReservation(id, csrftoken);
-        } else if (action === 'mark_paid') { // New action handler
-            markReservationAsPaid(id, csrftoken);
-        }
-    }
-
-    // Initialisation
-    document.addEventListener("DOMContentLoaded", () => {
-        // Initialiser les éléments du modal ici, une-fois que le DOM est prêt
-        reservationModal = document.getElementById('reservationModal');
-        modalBody = document.getElementById('modalBody');
-
-        // Graphiques
-        const reservationCtx = document.getElementById('reservationChart');
-        const revenueCtx = document.getElementById('revenueChart');
-        const reservationData = JSON.parse(document.getElementById('labels').textContent);
-        const revenueData = JSON.parse(document.getElementById('labels2').textContent);
-
-        new Chart(reservationCtx, {
-            type: 'bar',
-            data: {
-                labels: reservationData.map(item => new Date(item.month).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })),
-                datasets: [{
-                    label: 'Réservations mensuelles',
-                    data: reservationData.map(item => item.count),
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    borderColor: 'rgb(54, 162, 235)',
-                    borderWidth: 1
-                }]
-            }
-        });
-
-        new Chart(revenueCtx, {
-            type: 'line',
-            data: {
-                labels: revenueData.map(item => new Date(item.month).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })),
-                datasets: [{
-                    label: 'Revenus mensuels (€)',
-                    data: revenueData.map(item => item.total),
-                    backgroundColor: 'rgba(40, 167, 69, 0.2)',
-                    borderColor: 'rgba(40, 167, 69, 1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            }
-        });
-
-        fetchReservationsForDashboard();
-        refreshCancelledCount(); // Rafraîchir au chargement initial aussi
     });
-</script>
+}
 
+function annulerReservation(id, csrftoken) {
+    showConfirmationModal("⚠️ Annuler cette réservation ?", () => {
+        fetch("{% url 'admin_panel:update_reservation_status' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken,
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: JSON.stringify({ id, action: "cancel" })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast("Réservation annulée");
+                fetchReservationsForDashboard();
+                refreshCancelledCount();
+            } else showToast(data.error, true);
+        });
+    });
+}
+
+function markReservationAsPaid(id, csrftoken) {
+    showConfirmationModal("Marquer comme payée ?", () => {
+        fetch("{% url 'admin_panel:update_reservation_status' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken,
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: JSON.stringify({ id, action: "mark_paid" })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast("Paiement enregistré");
+                fetchReservationsForDashboard();
+            } else showToast(data.error, true);
+        });
+    });
+}
+
+// 🎯 HANDLER CENTRAL
+function handleActionButtonClick(event) {
+    const btn = event.currentTarget;
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+    const csrftoken = getCookie("csrftoken");
+
+    if (action === "details") {
+        fetch(`{% url 'admin_panel:reservation_detail' 0 %}`.replace("0", id), {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                modalBody.innerHTML = data.html;
+                reservationModal.style.display = "flex";
+                void reservationModal.offsetWidth;
+                reservationModal.classList.remove("opacity-0", "pointer-events-none");
+                reservationModal.classList.add("opacity-100", "pointer-events-auto");
+                modalBody.classList.remove("scale-95");
+                modalBody.classList.add("scale-100");
+            } else showToast(data.error, true);
+        });
+
+    } else if (action === "invoice") {
+        window.location.href = `{% url 'admin_panel:generate_invoice' 0 %}`.replace("0", id);
+
+    } else if (action === "confirm") {
+        confirmerReservation(id, csrftoken);
+
+    } else if (action === "cancel") {
+        annulerReservation(id, csrftoken);
+
+    } else if (action === "mark_paid") {
+        markReservationAsPaid(id, csrftoken);
+    }
+}
+
+// 🔄 TABLE RÉSERVATIONS
+function fetchReservationsForDashboard() {
+    fetch("{% url 'admin_panel:manage_reservations' %}?status=&user=", {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        credentials: "include"
+    })
+    .then(r => r.json())
+    .then(data => {
+        const tbody = document.querySelector("#reservations-table tbody");
+        if (tbody) {
+            tbody.innerHTML = data.html;
+            attachActionHandlers();
+        }
+    });
+}
+
+function attachActionHandlers() {
+    document.querySelectorAll(".action-btn").forEach(btn => {
+        btn.onclick = handleActionButtonClick;
+    });
+}
+
+// 🚀 INIT
+document.addEventListener("DOMContentLoaded", () => {
+    reservationModal = document.getElementById("reservationModal");
+    modalBody = document.getElementById("modalBody");
+
+    initCharts();
+    fetchReservationsForDashboard();
+    refreshCancelledCount();
+});
+</script>
 {% endblock %}

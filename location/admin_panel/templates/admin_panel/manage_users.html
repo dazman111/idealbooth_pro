@@ -33,23 +33,21 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'admin_panel:admin_user_detail' user.id %}" class="btn btn-sm btn-info">Voir</a>
-                        <a href="{% url 'admin_panel:edit_user' user.id %}" class="btn btn-sm btn-warning">Modifier</a>
+                    <a href="{% url 'admin_panel:admin_user_detail' user.id %}" class="btn btn-sm btn-info">Voir</a>
+                    <a href="{% url 'admin_panel:edit_user' user.id %}" class="btn btn-sm btn-warning">Modifier</a>
 
-                    <form method="POST" action="{% url 'admin_panel:admin_delete_user' user.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        {% if user.is_active %}
-                            <button type="submit" class="btn btn-sm btn-danger">Désactiver</button>
-                        {% else %}
-                    </form>  <!-- Fermeture du form précédent -->
-
-                    <form method="POST" action="{% url 'admin_panel:admin_reactivate_user' user.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-success">Réactiver</button>
-                    </form>
-                        {% endif %}
-
-                    </td>
+                    {% if user.is_active %}
+                        <form method="POST" action="{% url 'admin_panel:admin_delete_user' user.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{% url 'admin_panel:admin_reactivate_user' user.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-success">Réactiver</button>
+                        </form>
+                    {% endif %}
+                </td>
                 </tr>
                 {% empty %}
                 <tr>

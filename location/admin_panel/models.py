@@ -2,6 +2,12 @@
 from django.db import models
 from django.conf import settings
 from photobooths.models import Photobooth
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+
+User = settings.AUTH_USER_MODEL
+
 
 
 class Payment(models.Model):
@@ -72,16 +78,74 @@ class AdminNotification(models.Model):
         return self.message[:50]
     
 class Accessory(models.Model):
-    photobooth = models.ForeignKey(
-        Photobooth,
-        on_delete=models.CASCADE,
-        related_name='admin_accessories'
+    CATEGORY_CHOICES = [
+        ('fond_ecran', 'Fond d\'écran'),
+        ('accessoire', 'Accessoire'),
+    ]
 
-    )
+    photobooth = models.ForeignKey(Photobooth, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='accessories/')
+    image = models.ImageField(upload_to="accessories/", null=True, blank=True)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='accessoire')
 
     def __str__(self):
         return self.name
+    
 
+class Devis(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'En attente'),
+        ('accepted', 'Accepté'),
+        ('refused', 'Refusé'),
+    )
 
+    # L’entreprise = un utilisateur avec account_type="company"
+    entreprise = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="devis_entreprise"
+    )
+
+    # Le client = un utilisateur normal
+    client = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="devis_client"
+    )
+
+    admin = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="devis_admin"
+    )
+
+    numero = models.CharField(max_length=50, unique=True)
+    date_creation = models.DateTimeField(default=timezone.now)
+
+    description = models.TextField(default="Prestation Photobooth")
+    duree = models.PositiveIntegerField(default=2)
+
+    prix_ht = models.DecimalField(max_digits=10, decimal_places=2)
+    tva = models.DecimalField(max_digits=10, decimal_places=2, default=21)
+    prix_ttc = models.DecimalField(max_digits=10, decimal_places=2)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
+    def __str__(self):
+        return f"Devis {self.numero} - {self.client.username}"
+    
+    
+class PromotionBanner(models.Model):
+    message = models.CharField(max_length=255)
+    promo_code = models.CharField(max_length=50, blank=True, null=True)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+
+class Notification(models.Model):
+    photobooth = models.ForeignKey(Photobooth, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)

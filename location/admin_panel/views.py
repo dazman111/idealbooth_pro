@@ -3,6 +3,9 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth.views import LoginView
+from django.contrib.auth import login
+from django.contrib import messages
+from django.shortcuts import redirect
 from django.contrib.auth import logout
 from django.http import JsonResponse, FileResponse, HttpResponse
 from django.views.decorators.http import require_POST
@@ -35,19 +38,21 @@ from reservations.models import Notification
 from django.http import HttpResponseForbidden
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from coupons.models import Coupon, PromotionBanner
 from .forms import CouponForm, PromotionBannerForm
 from django.db.models import Count, Sum
 from django.db.models.functions import TruncMonth
 from django.contrib.auth import get_user_model
 from django.contrib import messages
-from photobooths.models import Accessory
-from photobooths.forms import AccessoryForm
+from admin_panel.models import Accessory
 from .permissions import is_admin
 from admin_panel.models import Message
 from photobooths.models import Photobooth
 from .forms import PhotoboothForm
-
+from accounts.models import Devis, Facture
+from admin_panel.forms import DevisForm
+from .forms import PhotoboothForm, CouponForm, AccessoryForm
 
 # Configurez le logger pour cette application
 logger = logging.getLogger(__name__) # 'admin_panel' par défaut si le nom de l'app est admin_panel
@@ -59,6 +64,23 @@ def is_admin(user):
     return user.is_superuser or user.is_staff
 
 class CustomLoginView(LoginView):
+    template_name = "admin_panel/login.html"  # IMPORTANT
+    redirect_authenticated_user = True        # IMPORTANT
+    next_page = None
+
+    def form_valid(self, form):
+        user = form.get_user()
+
+        # SEULE vérification nécessaire
+        if not user.is_staff:
+            # L'utilisateur normal peut voir la page, mais pas se connecter
+            messages.error(self.request, "Accès réservé aux administrateurs.")
+            return redirect('admin_panel:login')
+
+        # Admin → connexion OK
+        login(self.request, user)
+        return redirect('admin_panel:admin_dashboard')
+    
     def get_success_url(self):
         user = self.request.user
         if user.is_superuser or user.is_staff:
@@ -76,11 +98,21 @@ def admin_logout(request):
 @user_passes_test(is_admin)
 def admin_dashboard(request):
 
-    # 🔢 Totaux
+    # ============================================================
+    # 🔢 TOTAUX
+    # ============================================================
+
     total_users = User.objects.count()
+
     total_reservations = Reservation.objects.count()
-    total_confirmed = Reservation.objects.filter(status=Reservation.CONFIRMED).count()
-    total_cancelled = Reservation.objects.filter(status=Reservation.CANCELED).count()
+
+    total_confirmed = Reservation.objects.filter(
+        status=Reservation.CONFIRMED
+    ).count()
+
+    total_cancelled = Reservation.objects.filter(
+        status=Reservation.CANCELED
+    ).count()
 
     total_revenue = Reservation.objects.filter(
         status=Reservation.CONFIRMED
@@ -88,50 +120,149 @@ def admin_dashboard(request):
         total=Sum('photobooth__price')
     )['total'] or 0
 
-    # 📊 Réservations par mois
+
+    # ============================================================
+    # 📅 PÉRIODE DU GRAPHIQUE
+    # ============================================================
+
+    confirmed_reservations = Reservation.objects.filter(
+        status=Reservation.CONFIRMED
+    )
+
+    # Récupérer les dates existantes
+    first_reservation = confirmed_reservations.order_by(
+        'start_date'
+    ).first()
+
+    last_reservation = confirmed_reservations.order_by(
+        '-start_date'
+    ).first()
+
+
+    # ============================================================
+    # 📊 RÉSERVATIONS PAR MOIS
+    # ============================================================
+
     reservations_by_month = (
-        Reservation.objects
-        .filter(status=Reservation.CONFIRMED)
+        confirmed_reservations
         .annotate(month=TruncMonth('start_date'))
         .values('month')
         .annotate(count=Count('id'))
         .order_by('month')
     )
 
-    reservations_data = [
-        {
-            "month": item["month"].strftime("%Y-%m-01"),
-            "count": item["count"]
-        }
+    reservations_dict = {
+        item['month'].strftime('%Y-%m-01'): item['count']
         for item in reservations_by_month
-    ]
+    }
 
-    # 💰 Revenus par mois
+
+    # ============================================================
+    # 💰 REVENUS PAR MOIS
+    # ============================================================
+
     revenue_by_month = (
-        Reservation.objects
-        .filter(status=Reservation.CONFIRMED)
+        confirmed_reservations
         .annotate(month=TruncMonth('start_date'))
         .values('month')
         .annotate(total=Sum('photobooth__price'))
         .order_by('month')
     )
 
-    revenue_data = [
-        {
-            "month": item["month"].strftime("%Y-%m-01"),
-            "total": float(item["total"])
-        }
+    revenue_dict = {
+        item['month'].strftime('%Y-%m-01'): float(item['total'] or 0)
         for item in revenue_by_month
+    }
+
+
+    # ============================================================
+    # 📆 CONSTRUIRE TOUS LES MOIS DE LA PÉRIODE
+    # ============================================================
+
+    months = []
+
+    if first_reservation and last_reservation:
+
+        current = first_reservation.start_date.replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0
+        )
+
+        end = last_reservation.start_date.replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0
+        )
+
+        while current <= end:
+
+            month_key = current.strftime('%Y-%m-01')
+
+            months.append(month_key)
+
+            # Passage au mois suivant
+            if current.month == 12:
+                current = current.replace(
+                    year=current.year + 1,
+                    month=1
+                )
+            else:
+                current = current.replace(
+                    month=current.month + 1
+                )
+
+
+    # ============================================================
+    # 📊 DONNÉES COMPLÈTES POUR LE GRAPHIQUE
+    # ============================================================
+
+    reservations_data = [
+        {
+            "month": month,
+            "count": reservations_dict.get(month, 0)
+        }
+        for month in months
     ]
 
-    # 🔔 Notifications admin
+    revenue_data = [
+        {
+            "month": month,
+            "total": revenue_dict.get(month, 0)
+        }
+        for month in months
+    ]
+
+
+    # ============================================================
+    # 🔔 NOTIFICATIONS ADMIN
+    # ============================================================
+
     notifications = Notification.objects.filter(
         user__is_staff=True
     ).order_by('-created_at')
 
-    unread_count = notifications.filter(read=False).count()
-    # ✉️ Messages non lus 
-    unread_messages = Message.objects.filter(is_read=False).count()
+    unread_count = notifications.filter(
+        read=False
+    ).count()
+
+
+    # ============================================================
+    # ✉️ MESSAGES NON LUS
+    # ============================================================
+
+    unread_messages = Message.objects.filter(
+        is_read=False
+    ).count()
+
+
+    # ============================================================
+    # 📦 CONTEXT
+    # ============================================================
 
     context = {
         "total_users": total_users,
@@ -139,23 +270,43 @@ def admin_dashboard(request):
         "total_confirmed": total_confirmed,
         "total_cancelled": total_cancelled,
         "total_revenue": total_revenue,
-        "reservations_by_month": reservations_data,
-        "revenue_by_month": revenue_data,
+
+        "reservations_by_month": json.dumps(
+            reservations_data
+        ),
+
+        "revenue_by_month": json.dumps(
+            revenue_data
+        ),
+
         "notifications": notifications,
         "unread_count": unread_count,
+        "unread_messages": unread_messages,
     }
 
-    return render(request, "admin_panel/admin_dashboard.html", context)
+
+    return render(
+        request,
+        "admin_panel/admin_dashboard.html",
+        context
+    )
 
 #MESSAGE ADMIN
 @staff_member_required
 def admin_messages(request):
     # Tous les messages reçus par l'admin
-    messages_list = Message.objects.filter(recipient=request.user).order_by('-created_at')
+    messages_list = Message.objects.filter(
+        recipient=request.user
+    ).order_by('-created_at')
+
+    # Compteurs des messages
+    total_count = messages_list.count()
     unread_count = messages_list.filter(is_read=False).count()
+    read_count = messages_list.filter(is_read=True).count()
 
     # Construction des threads (réponses liées à un message parent)
     threads = {}
+
     for msg in messages_list:
         if msg.parent:
             threads.setdefault(msg.parent.id, []).append(msg)
@@ -165,7 +316,11 @@ def admin_messages(request):
         parent_id = request.POST.get('parent_id')
         body = request.POST.get('body')
 
-        parent_msg = get_object_or_404(Message, id=parent_id)
+        parent_msg = get_object_or_404(
+            Message,
+            id=parent_id,
+            recipient=request.user
+        )
 
         # Création d'un nouveau message (réponse)
         Message.objects.create(
@@ -179,15 +334,24 @@ def admin_messages(request):
         parent_msg.is_read = True
         parent_msg.save()
 
-        messages.success(request, "Réponse envoyée avec succès.")
+        messages.success(
+            request,
+            "Réponse envoyée avec succès."
+        )
+
         return redirect('admin_panel:admin_messages')
 
-    return render(request, 'admin_panel/messages.html', {
-        'messages_list': messages_list,
-        'unread_count': unread_count,
-        'threads': threads,
-    })
-
+    return render(
+        request,
+        'admin_panel/messages.html',
+        {
+            'messages_list': messages_list,
+            'total_count': total_count,
+            'unread_count': unread_count,
+            'read_count': read_count,
+            'threads': threads,
+        }
+    )
 
 #GESTION UTILISATEURS
 @login_required
@@ -248,9 +412,9 @@ def admin_delete_user(request, user_id):
         user.email = f"deleted_{user.id}@example.com"
         user.username = f"deleted_{user.id}"
 
-        # Marquer comme supprimé si champ ajouté
-        if hasattr(user, "is_deleted"):
-            user.is_deleted = True
+        
+        # Marquer comme supprimé (via deleted_at)
+        user.deleted_at = timezone.now()
 
         user.save()
 
@@ -293,13 +457,18 @@ def restock_photobooth(request, pk):
 
     if request.method == "POST":
         action = request.POST.get("action")
+        if action not in ["stock", "online"]:
+            return JsonResponse({"success": False, "error": "Action non autorisée"}, status=403)
 
         if action == "stock":
             booth.stock += 1
 
-        elif action == "online" and booth.stock > 0:
+        elif action == "online" and booth.stock > 1:
             booth.available += 1
             booth.stock -= 1
+
+        elif action == "new_stock":
+            booth.stock += 1
 
         booth.save()
 
@@ -314,6 +483,7 @@ def restock_photobooth(request, pk):
 
 
 @login_required
+@user_passes_test(is_admin)
 def rent_photobooth(request, pk):
     booth = get_object_or_404(Photobooth, pk=pk)
 
@@ -324,7 +494,7 @@ def rent_photobooth(request, pk):
         messages.success(request, "Photobooth loué avec succès !")
 
         # Vérifie si on doit basculer du stock vers en ligne
-        if booth.available == 0 and booth.stock > 0:
+        if booth.available == 0 and booth.stock > 1:
             booth.available += 1
             booth.stock -= 1
             booth.save()
@@ -349,6 +519,31 @@ def add_photobooth(request):
         form = PhotoboothForm()
     return render(request, 'admin_panel/photobooth_form.html', {'form': form, 'title': 'Ajouter un photobooth'})
 
+import deepl
+
+translator = deepl.Translator("9702d5e8-a9af-4f5d-9cd7-4a1dfd229775:fx")
+
+def auto_translate(text_fr):
+    try:
+        en = translator.translate_text(
+            text_fr,
+            source_lang="FR",
+            target_lang="EN-US"
+        ).text
+
+        nl = translator.translate_text(
+            text_fr,
+            source_lang="FR",
+            target_lang="NL"
+        ).text
+
+        return en, nl
+
+    except Exception as e:
+        print(f"Erreur DeepL : {e}")
+        return text_fr, text_fr
+
+
 @login_required
 @user_passes_test(is_admin)
 def edit_photobooth(request, pk):
@@ -358,22 +553,23 @@ def edit_photobooth(request, pk):
         form = PhotoboothForm(request.POST, request.FILES, instance=booth)
 
         if form.is_valid():
-            form.save()
+            obj = form.save(commit=False)
 
-            # Réponse AJAX → 200 OK
-            return JsonResponse({
-                "success": True,
-                "message": "Photobooth mis à jour avec succès."
-            }, status=200)
+            # AUTO-TRADUCTION
+            if obj.description_fr:
+                en, nl = auto_translate(obj.description_fr)
+                obj.description_en = en
+                obj.description_nl = nl
 
-        # Erreurs du formulaire
-        return JsonResponse({
-            "success": False,
-            "errors": form.errors
-        }, status=400)
+            obj.save()
+            form.save_m2m()
 
-    # GET normal → afficher la page
-    form = PhotoboothForm(instance=booth)
+            # 🔥 REDIRECTION DIRECTE (plus de JSON)
+            return redirect("/fr/admin-panel/photobooths/")
+
+    else:
+        form = PhotoboothForm(instance=booth)
+
     return render(
         request,
         "admin_panel/edit_photobooth.html",
@@ -414,6 +610,7 @@ def manage_payments(request):
     return render(request, 'admin_panel/manage_payments.html', context)
 
 #GESTION DES ACCESSOIRES
+
 @login_required
 @user_passes_test(is_admin)
 def accessory_list(request):
@@ -455,6 +652,7 @@ def edit_accessory(request, pk):
 
 @login_required
 @user_passes_test(is_admin)
+@require_POST
 def delete_accessory(request, pk):
     accessory = get_object_or_404(Accessory, pk=pk)
     accessory.delete()
@@ -791,8 +989,10 @@ def envoyer_notification_email(user, sujet, message):
     except Exception as e:
         print(f"Erreur lors de l'envoi de l'email à {user.email}: {e}")
 
+@login_required
+@user_passes_test(is_admin)
 def manage_blog(request):
-    # On récupère uniquement les articles publiés (pas les brouillons)
+    # On récupère uniquement les articles publiés 
     articles = Article.objects.all().order_by('-created_at')
     return render(request, 'admin_panel/manage_blog.html', {'articles': articles})
 
@@ -805,25 +1005,28 @@ def cancelled_count_api(request):
 
 #LISTE COUPONS
 @login_required
+@user_passes_test(is_admin)
 def coupon_list(request):
     coupons = Coupon.objects.all()
     return render(request, "admin_panel/coupons/manage_coupons.html", {"coupons": coupons})
 
 # Ajouter un coupon
 @login_required
+@user_passes_test(is_admin)
 def add_coupon(request):
     if request.method == "POST":
         form = CouponForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Coupon ajouté avec succès.")
-            return redirect("coupon_list")
+            return redirect("admin_panel:admin_coupon_list")
     else:
         form = CouponForm()
     return render(request, "admin_panel/coupons/add_coupon.html", {"form": form})
 
 # Modifier un coupon
 @login_required
+@user_passes_test(is_admin)
 def edit_coupon(request, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id)
     if request.method == "POST":
@@ -839,8 +1042,175 @@ def edit_coupon(request, coupon_id):
 
 # Supprimer un coupon
 @login_required
+@user_passes_test(is_admin)
+@require_POST
 def delete_coupon(request, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id)
     coupon.delete()
     messages.success(request, "Coupon supprimé.")
     return redirect("admin_panel:admin_coupon_list")
+
+@login_required
+@user_passes_test(is_admin)
+def manage_coupons(request):
+    coupons = Coupon.objects.all()
+    return render(request, "admin_panel/coupons/manage_coupons.html", {"coupons": coupons})
+
+
+def is_admin(user):
+    return user.is_staff or getattr(user, "account_type", None) == "company"
+
+
+# --- LISTE DES DEVIS ---
+@login_required
+@user_passes_test(is_admin)
+def manage_devis(request):
+    devis_list = Devis.objects.all().order_by("-date_creation")
+    return render(request, "admin_panel/manage_devis.html", {
+        "devis_list": devis_list
+    })
+
+
+# --- CRÉATION D’UN DEVIS ---
+@login_required
+@user_passes_test(is_admin)
+def create_devis(request):
+
+    if request.method == "POST":
+        form = DevisForm(request.POST)
+        if form.is_valid():
+            devis = form.save(commit=False)
+
+            # Numéro unique
+            devis.numero = f"DVS-{int(timezone.now().timestamp())}"
+
+            idealbooth = User.objects.get(username="IdealBooth")
+            devis.entreprise = idealbooth
+
+            devis.client = form.cleaned_data["client"]  # ← DOIT être dans ton formulaire
+
+            devis.save()
+            messages.success(request, "Le devis a été créé avec succès.")
+            return redirect("admin_panel:manage_devis")
+
+    else:
+        form = DevisForm()
+
+    return render(request, "admin_panel/create_devis.html", {"form": form})
+
+
+# --- VALIDATION D’UN DEVIS + CRÉATION FACTURE ---
+@login_required
+@user_passes_test(is_admin)
+def valider_devis(request, devis_id):
+    devis = get_object_or_404(Devis, id=devis_id)
+
+    # Mettre à jour le statut du devis
+    devis.status = "accepted"
+    devis.save()
+
+    # Générer une facture basée sur l'ancien système
+    Facture.objects.create(
+        devis=devis,
+        numero=f"FAC-{devis.numero}",
+        date_creation=timezone.now(),
+
+        # ENTREPRISE (IdealBooth)
+        company_name=devis.company_name,
+        company_address=devis.company_address,
+        company_phone=devis.company_phone,
+        company_email=devis.company_email,
+        company_bce=devis.company_bce,
+        company_vat_number=devis.company_vat_number,
+
+        # CLIENT
+        client_name=devis.client_name,
+        client_address=devis.client_address,
+        client_vat_number=devis.client_vat_number,
+
+        # PRESTATION
+        description=devis.description,
+        duree=devis.duree,
+        montant_ht=devis.prix_ht,
+        tva=devis.tva,
+        montant_ttc=devis.prix_ttc,
+    )
+
+    messages.success(request, "Le devis a été validé et la facture a été générée.")
+    return redirect("admin_panel:manage_devis")
+
+@login_required
+def devis_list(request):
+    devis = Devis.objects.filter(client=request.user)
+    return render(request, "accounts/devis_list.html", {"devis": devis})
+
+@login_required
+@user_passes_test(is_admin)
+@require_POST
+def adminpanel_delete_notification(request, pk):
+    notif = get_object_or_404(Notification, pk=pk)
+    notif.delete()
+    return redirect('admin_panel:admin_dashboard')
+
+@login_required
+@user_passes_test(is_admin)
+def adminpanel_read_notification(request, pk):
+    notif = get_object_or_404(Notification, pk=pk)
+    notif.read = True
+    notif.save()
+    return redirect('admin_panel:admin_dashboard')
+
+@login_required
+def view_devis(request, devis_id):
+    devis = get_object_or_404(Devis, id=devis_id)
+
+    # Autorisation : admin OU client propriétaire
+    if not request.user.is_staff and devis.client != request.user:
+        return HttpResponseForbidden("Accès interdit")
+    
+    return render(request, "admin_panel/devis_detail.html", {"devis": devis})
+
+# --- Promo banner ---
+@login_required
+@user_passes_test(is_admin)
+def banner_list(request):
+    banners = PromotionBanner.objects.all().order_by('-start_date')
+    return render(request, "admin_panel/banners/list.html", {"banners": banners})
+
+@login_required
+@user_passes_test(is_admin)
+def add_banner(request):
+    if request.method == "POST":
+        form = PromotionBannerForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Bannière ajoutée avec succès.")
+            return redirect("admin_panel:banner_list")
+    else:
+        form = PromotionBannerForm()
+    return render(request, "admin_panel/banners/form.html", {"form": form, "title": "Ajouter une bannière"})
+
+@login_required
+@user_passes_test(is_admin)
+def edit_banner(request, pk):
+    banner = get_object_or_404(PromotionBanner, pk=pk)
+    if request.method == "POST":
+        form = PromotionBannerForm(request.POST, instance=banner)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Bannière modifiée avec succès.")
+            return redirect("admin_panel:banner_list")
+    else:
+        form = PromotionBannerForm(instance=banner)
+    return render(request, "admin_panel/banners/form.html", {"form": form, "title": "Modifier la bannière"})
+
+@login_required
+@user_passes_test(is_admin)
+@require_POST
+def delete_banner(request, pk):
+    banner = get_object_or_404(PromotionBanner, pk=pk)
+    banner.delete()
+    messages.success(request, "Bannière supprimée.")
+    return redirect("admin_panel:banner_list")
+
+

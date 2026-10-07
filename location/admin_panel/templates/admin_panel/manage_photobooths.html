@@ -14,7 +14,12 @@
         {% for booth in photobooths %}
         <div class="col-md-4 mb-4">
             <div class="card shadow-sm h-100">
+            {% if booth.image %}
                 <img src="{{ booth.image.url }}" class="card-img-top" alt="{{ booth.name }}">
+                {% else %}
+                <img src="/static/img/no-image.png" class="card-img-top" alt="Image non disponible">
+                {% endif %}
+
                 <div class="card-body">
                     <h5 class="card-title">{{ booth.name }}</h5>
                     <p class="card-text">{{ booth.description|truncatechars:100 }}</p>
@@ -46,6 +51,12 @@
                             data-url="{% url 'admin_panel:restock_photobooth' booth.pk %}"
                             data-action="online">
                         🌐 Remettre en ligne
+                    </button>
+
+                    <!-- New stock -->
+                    <button class="btn btn-success"
+                            onclick="updateStock({{ booth.id }}, 'new_stock')">
+                        ➕ Nouveau stock
                     </button>
                     {% endif %}
 

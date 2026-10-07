@@ -1,15 +1,68 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>{{ title }}</h2>
+<div class="max-w-3xl mx-auto mt-10 px-4 pb-32">
 
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
+    <h2 class="text-3xl font-bold text-primary mb-6">{{ title }}</h2>
 
-        <button class="btn btn-primary">Enregistrer</button>
-        <a href="{% url 'admin_panel:accessory_list' %}" class="btn btn-secondary">Annuler</a>
-    </form>
+    <a href="{% url 'admin_panel:accessory_list' %}"
+       class="inline-block mb-6 px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition">
+        ⬅ Retour
+    </a>
+
+    <div class="bg-card shadow-xl rounded-xl border border-primary/20 p-6">
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- NOM -->
+            <div>
+                <label class="block font-semibold mb-1">Nom</label>
+                <input type="text" name="{{ form.name.name }}" value="{{ form.name.value|default:'' }}"
+                       class="w-full px-3 py-2 rounded border border-gray-300 bg-base text-base">
+            </div>
+
+            <!-- PHOTOBOOTH ASSOCIÉ -->
+            <div>
+                <label class="block font-semibold mb-1">Photobooth associé</label>
+                <select name="{{ form.photobooth.name }}"
+                        class="w-full px-3 py-2 rounded border border-gray-300 bg-base text-base">
+                    <option value="">-- Aucun --</option>
+                    {% for pb in form.fields.photobooth.queryset %}
+                        <option value="{{ pb.id }}" {% if form.photobooth.value|stringformat:"s" == pb.id|stringformat:"s" %}selected{% endif %}>{{ pb.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- IMAGE -->
+            <div>
+                <label class="block font-semibold mb-1">Image</label>
+                {% if form.instance.image %}
+                    <img src="{{ form.instance.image.url }}" alt="{{ form.instance.name }}" class="w-24 h-24 object-cover rounded mb-2">
+                {% endif %}
+                <input type="file" name="{{ form.image.name }}"
+                       class="w-full px-3 py-2 rounded border border-gray-300 bg-base text-base">
+            </div>
+            
+            <!-- CATÉGORIE -->
+            <div>
+                <label class="block font-semibold mb-1">Catégorie</label>
+                <select name="{{ form.category.name }}"
+                        class="w-full px-3 py-2 rounded border border-gray-300 bg-base text-base">
+                    {% for value, label in form.fields.category.choices %}
+                        <option value="{{ value }}" {% if form.category.value == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit"
+                    class="px-5 py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700 transition">
+                💾 Enregistrer
+            </button>
+
+        </form>
+
+    </div>
+
 </div>
 {% endblock %}

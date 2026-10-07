@@ -1,73 +1,183 @@
 {% extends 'base.html' %}
 {% load message_tags %}
+
 {% block title %}Messages Admin{% endblock %}
 
 {% block content %}
+
 <div class="container px-4 py-5">
-    <h2 class="text-2xl font-bold mb-4">📩 Messages des utilisateurs</h2>
-    <a href="{% url 'admin_panel:admin_dashboard' %}" class="btn btn-secondary">⬅ Retour au Dashboard</a>
+
+    <h2 class="text-2xl font-bold mb-4">
+        📩 Tous les messages des utilisateurs
+    </h2>
+    <div class="mb-4 p-3 rounded bg-gray-100">
+        <strong>Total :</strong> {{ total_count }}
+        &nbsp; | &nbsp;
+        <span class="text-green-600">
+            ✓ Lus : {{ read_count }}
+        </span>
+        &nbsp; | &nbsp;
+        <span class="text-red-600">
+            ● Non lus : {{ unread_count }}
+        </span>
+    </div>
+
+    <a href="{% url 'admin_panel:admin_dashboard' %}"
+       class="btn btn-secondary mb-4">
+        ⬅ Retour au Dashboard
+    </a>
 
     {% if unread_count > 0 %}
-        <p class="text-sm text-red-600 mb-3">
-            Vous avez {{ unread_count }} message(s) non lu(s).
+        <p class="text-sm text-red-600 mb-4">
+            🔴 {{ unread_count }} message(s) non lu(s)
+        </p>
+    {% else %}
+        <p class="text-sm text-green-600 mb-4">
+            ✅ Tous les messages sont lus
         </p>
     {% endif %}
 
-    <a href="?unread=1" class="text-blue-600 underline">Afficher seulement les non lus</a>
 
+    <!-- TOUS LES MESSAGES -->
     <div>
-        {% for msg in messages_list %}
-            <div class="border p-3 mb-3 rounded {% if not msg.is_read %}bg-yellow-50{% endif %}">
-                <p class="font-semibold">{{ msg.subject }}</p>
-                <p class="text-sm text-gray-600">
-                    De: {{ msg.sender.username }} - {{ msg.created_at }}
-                </p>
-                <p class="mb-2">{{ msg.body }}</p>
 
-                {# Affichage des réponses en thread #}
+        {% for msg in messages_list %}
+
+            <div class="
+                border
+                p-4
+                mb-4
+                rounded
+                {% if msg.is_read %}
+                    bg-white
+                    border-gray-200
+                {% else %}
+                    bg-yellow-50
+                    border-yellow-400
+                {% endif %}
+            ">
+
+                <!-- EN-TÊTE -->
+                <div class="flex justify-between items-center mb-2">
+
+                    <p class="font-semibold text-lg">
+                        {{ msg.subject }}
+                    </p>
+
+                    {% if msg.is_read %}
+                        <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                            ✓ LU
+                        </span>
+                    {% else %}
+                        <span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-bold">
+                            ● NON LU
+                        </span>
+                    {% endif %}
+
+                </div>
+
+
+                <!-- EXPÉDITEUR -->
+                <p class="text-sm text-gray-600 mb-2">
+                    De :
+                    <strong>{{ msg.sender.username }}</strong>
+                    —
+                    {{ msg.created_at }}
+                </p>
+
+
+                <!-- MESSAGE -->
+                <div class="mb-3">
+                    {{ msg.body }}
+                </div>
+
+
+                <!-- RÉPONSES -->
                 {% if threads|get_item:msg.id %}
 
                     {% for reply in threads|get_item:msg.id %}
-                        <div class="ml-4 mt-2 p-2 border-l-2 border-gray-300">
-                            <p class="text-sm text-gray-600">
-                                Réponse: {{ reply.sender.username }} - {{ reply.created_at }}
+
+                        <div class="ml-4 mt-3 p-3 border-l-4 border-gray-300 bg-gray-50">
+
+                            <p class="text-sm text-gray-600 mb-1">
+                                Réponse de
+                                <strong>{{ reply.sender.username }}</strong>
+                                —
+                                {{ reply.created_at }}
                             </p>
-                            <p>{{ reply.body }}</p>
+
+                            <p>
+                                {{ reply.body }}
+                            </p>
+
                         </div>
+
                     {% endfor %}
+
                 {% endif %}
 
-                <form method="post" class="mt-2">
+
+                <!-- RÉPONSE ADMIN -->
+                <form method="post" class="mt-4">
+
                     {% csrf_token %}
-                    <input type="hidden" name="parent_id" value="{{ msg.id }}">
-                    <textarea name="body" class="w-full border p-2 rounded mb-2"
-                              placeholder="Répondre..." required></textarea>
-                    <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+
+                    <input
+                        type="hidden"
+                        name="parent_id"
+                        value="{{ msg.id }}"
+                    >
+
+                    <textarea
+                        name="body"
+                        class="w-full border p-2 rounded mb-2"
+                        placeholder="Répondre..."
+                        required
+                    ></textarea>
+
+                    <button
+                        type="submit"
+                        class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    >
                         Répondre
                     </button>
+
                 </form>
+
             </div>
+
         {% empty %}
-            <p>Aucun message pour le moment.</p>
+
+            <p>
+                Aucun message pour le moment.
+            </p>
+
         {% endfor %}
+
     </div>
+
 </div>
 
-{# Notification admin en haut de page #}
-{% if admin_unread_messages > 0 %}
+
+<!-- NOTIFICATION NON LUS -->
+{% if unread_count > 0 %}
+
     <div class="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg">
-        🔔 {{ admin_unread_messages }} message(s) non lu(s)
+        🔔 {{ unread_count }} message(s) non lu(s)
     </div>
+
 {% endif %}
 
 {% endblock %}
 
+
 {% block extra_js %}
+
 <script>
-// Auto-refresh toutes les 30 secondes pour mettre à jour la liste des messages
 setInterval(() => {
     fetch(window.location.href, {method: "HEAD"})
         .then(() => location.reload());
 }, 30000);
 </script>
+
 {% endblock %}
