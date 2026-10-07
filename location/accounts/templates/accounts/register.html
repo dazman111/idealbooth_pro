@@ -1,15 +1,17 @@
 {% extends 'base.html' %}
 {% load i18n %}
+{% load static %}
+{% load widget_tweaks %}
 
 {% block title %}{% trans "Créer un compte" %}{% endblock %}
 
 {% block content %}
-{% load static %}
+
 <style>
   body {
     font-family: 'Poppins', 'Inter', sans-serif;
     background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
-                url('/static/images/signup-bg.jpg') no-repeat center center;
+                url('{% static "images/signup-bg.jpg" %}') no-repeat center center;
     background-size: cover;
     color: #f8f9fa;
   }
@@ -90,39 +92,21 @@
 <div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-md-6">
+
       <div class="card shadow-lg rounded-4 border-0">
         <div class="card-body p-5">
+
           <h2 class="text-center mb-4 fw-bold">{% trans "Créer un compte" %}</h2>
 
           <form method="POST" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
+
+            <!-- Champs normaux -->
             {% for field in form %}
-              {% if field.name != 'accept_terms' %}
+              {% if field.name not in 'accept_terms company_name company_vat_number company_address' %}
                 <div class="mb-4">
-                  <label for="{{ field.id_for_label }}" class="form-label d-block fw-semibold">
-                    {{ field.label }}
-                  </label>
-
-                  {% if field.help_text %}
-                    <div class="form-text mb-1" style="margin-top: -0.5rem;">{{ field.help_text }}</div>
-                  {% endif %}
-
-                  {% if field.name == 'password1' or field.name == 'password2' %}
-                    <div class="input-group">
-                      {{ field }}
-                     <span class="input-group-text toggle-password" data-target="{{ field.id_for_label }}">
-                      <!-- Œil noir simple -->
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-                        <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8z"/>
-                        <path d="M8 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
-                      </svg>
-                    </span>
-
-                    </div>
-                  {% else %}
-                    {{ field }}
-                  {% endif %}
-
+                  <label class="form-label fw-semibold">{{ field.label }}</label>
+                  {{ field|add_class:"form-control" }}
                   {% for error in field.errors %}
                     <div class="text-danger small">{{ error }}</div>
                   {% endfor %}
@@ -130,17 +114,48 @@
               {% endif %}
             {% endfor %}
 
+            <!-- Champs entreprise (masqués par défaut) -->
+            <div id="company-fields" style="display:none;">
+
+              <div class="mb-4">
+                <label class="form-label fw-semibold">{{ form.company_name.label }}</label>
+                {{ form.company_name|add_class:"form-control" }}
+                {% for error in form.company_name.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label fw-semibold">{{ form.company_vat_number.label }}</label>
+                {{ form.company_vat_number|add_class:"form-control" }}
+                {% for error in form.company_vat_number.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label fw-semibold">{{ form.company_address.label }}</label>
+                {{ form.company_address|add_class:"form-control" }}
+                {% for error in form.company_address.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+
+            </div>
+
+            <!-- Acceptation des conditions -->
             <div class="mb-3 form-check">
               {{ form.accept_terms }}
               <label class="form-check-label" for="{{ form.accept_terms.id_for_label }}">
                 {% trans "J'ai lu et j'accepte les" %}
-                <a href="{% url 'politique_confidentialite' %}" target="_blank">{% trans "politiques de confidentialité" %}</a>
+                <a href="{% url 'politique_confidentialite' %}" target="_blank">
+                  {% trans "politiques de confidentialité" %}
+                </a>
                 {% trans "et les" %}
-                <a href="{% url 'mentions_legales' %}" target="_blank">{% trans "mentions légales" %}</a>.
+                <a href="{% url 'mentions_legales' %}" target="_blank">
+                  {% trans "mentions légales" %}
+                </a>.
               </label>
-              {% for error in form.accept_terms.errors %}
-                <div class="text-danger small">{{ error }}</div>
-              {% endfor %}
             </div>
 
             {% if form.non_field_errors %}
@@ -149,20 +164,44 @@
               </div>
             {% endif %}
 
-            <button type="submit" class="btn btn-primary w-100 mt-3">{% trans "S'inscrire" %}</button>
+            <button type="submit" class="btn btn-primary w-100 mt-3">
+              {% trans "S'inscrire" %}
+            </button>
           </form>
 
           <hr class="my-4 border-light">
 
           <p class="text-center mb-0">
             {% trans "Déjà un compte ?" %}
-            <a href="{% url 'accounts:login' %}" class="fw-semibold">{% trans "Se connecter" %}</a>
+            <a href="{% url 'accounts:login' %}" class="fw-semibold">
+              {% trans "Se connecter" %}
+            </a>
           </p>
+
         </div>
       </div>
+
     </div>
   </div>
 </div>
 
+<!-- Script pour afficher les champs entreprise -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const accountTypeField = document.getElementById("id_account_type");
+    const companyFields = document.getElementById("company-fields");
+
+    function toggleCompanyFields() {
+        if (accountTypeField.value === "company") {
+            companyFields.style.display = "block";
+        } else {
+            companyFields.style.display = "none";
+        }
+    }
+
+    accountTypeField.addEventListener("change", toggleCompanyFields);
+    toggleCompanyFields(); // au chargement
+});
+</script>
 
 {% endblock %}

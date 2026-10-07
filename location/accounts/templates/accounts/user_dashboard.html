@@ -1,487 +1,391 @@
 {% extends "base.html" %}
 {% load i18n %}
-
-{% block title %}Mon Tableau de Bord{% endblock %}
+{% load widget_tweaks %}
 
 {% block content %}
 <style>
-/* ===== STYLE DASHBOARD ALTERNATIF ===== */
+    /* Palette de couleurs */
+:root {
+    --primary: #4A90E2;      /* Bleu doux */
+    --secondary: #50E3C2;    /* Vert menthe */
+    --accent: #F5A623;       /* Orange chaleureux */
+    --bg-light: #F7F9FC;     /* Fond clair */
+    --text-dark: #212224;    /* Texte foncé */
+    --white: #ffffff;
+}
 
+/* Style général */
 body {
-    font-family:'Open Sans', 'Roboto', sans-serif;
-    background-color: #fff; /* fond blanc pur */
-    color: #222; /* texte très sombre */
-    line-height: 1.5;
+    background: var(--bg-light);
+    font-family: "Segoe UI", sans-serif;
+    color: var(--text-white);
+    margin: 0;
+    padding: 0;
 }
 
-nav a {
-    font-weight: bold !important;
+/* Conteneur principal */
+.account-container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: var(--white);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgb(244, 233, 233);
 }
 
-.dark body {
-    background-color: #121212; /* mode sombre très foncé */
-    color: #eee; /* texte clair */
-}
-
-/* Titres */
-h1, h2, h3, h4 {
-    font-weight: 700;
-    color: #333;
-    letter-spacing: 0;
-}
-.dark h1, .dark h2, .dark h3, .dark h4 {
-    color: #ddd;
+/* Titre */
+.account-container h1 {
+    color: var(--primary);
+    border-left: 6px solid var(--accent);
+    padding-left: 12px;
+    font-size: 2rem;
 }
 
 /* Sections */
-section {
-    background-color: #fafafa; /* gris très clair */
-    border-radius: 12px;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.1);
-    padding: 2rem;
-    margin-bottom: 2rem;
-    transition: box-shadow 0.3s ease;
-    border: none;
-}
-
-.dark section {
-    background-color: #1e1e1e;
-    box-shadow: 0 1px 8px rgba(255,255,255,0.1);
-}
-
-section:hover {
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-}
-.dark section:hover {
-    box-shadow: 0 6px 30px rgba(255,255,255,0.2);
-}
-
-/* Inputs et Textareas */
-input, textarea {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
+.section {
+    margin-top: 30px;
+    padding: 20px;
+    background: var(--bg-light);
+    border-left: 4px solid var(--primary);
     border-radius: 8px;
-    border: 1px solid #ccc;
-    background-color: #fff;
-    color: #333;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    font-family: inherit;
 }
 
-input:focus, textarea:focus {
-    outline: none;
-    border-color: #0066ff;
-    box-shadow: 0 0 8px rgba(0,102,255,0.3);
+/* Labels + inputs */
+label {
+    font-weight: bold;
+    color: var(--primary);
 }
 
-.dark input, .dark textarea {
-    background-color: #2a2a2a;
-    border-color: #555;
-    color: #eee;
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    font-size: 1rem;
 }
 
-.dark input:focus, .dark textarea:focus {
-    border-color: #3399ff;
-    box-shadow: 0 0 8px rgba(51,153,255,0.5);
-}
-
-::placeholder {
-    color: #999;
-}
-.dark ::placeholder {
-    color: #bbb;
-}
-
-/* Boutons */
+/* Bouton */
 button {
-    padding: 0.75rem 1.5rem;
-    border-radius: 10px;
-    font-weight: 600;
+    background: var(--primary);
+    color: var(--white);
+    padding: 12px 20px;
     border: none;
+    border-radius: 6px;
     cursor: pointer;
-    font-family: inherit;
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    font-size: 1rem;
+    transition: 0.3s;
 }
 
-/* Couleurs des boutons */
-.bg-indigo-600 {
-    background-color: #0052cc;
-    color: white;
-}
-.bg-indigo-600:hover {
-    background-color: #003d99;
-    box-shadow: 0 0 10px rgba(0, 82, 204, 0.6);
-}
-
-.bg-green-600 {
-    background-color: #008a00;
-    color: white;
-}
-.bg-green-600:hover {
-    background-color: #005d00;
-    box-shadow: 0 0 10px rgba(0, 138, 0, 0.6);
-}
-
-.bg-blue-600 {
-    background-color: #0073e6;
-    color: white;
-}
-.bg-blue-600:hover {
-    background-color: #004d99;
-    box-shadow: 0 0 10px rgba(0, 115, 230, 0.6);
-}
-
-.bg-orange-500 {
-    background-color: #ff6600;
-    color: white;
-}
-.bg-orange-500:hover {
-    background-color: #cc5200;
-    box-shadow: 0 0 10px rgba(255, 102, 0, 0.6);
+button:hover {
+    background: var(--accent);
 }
 
 /* Liens */
 a {
-    color: #0052cc;
+    color: var(--secondary);
     text-decoration: none;
-    transition: color 0.3s ease;
 }
+
 a:hover {
-    color: #003d99;
     text-decoration: underline;
-}
-.dark a {
-    color: #3399ff;
-}
-.dark a:hover {
-    color: #66b2ff;
-}
-
-/* Statuts */
-.text-green-600 {
-    color: #008a00;
-}
-.text-orange-500 {
-    color: #ff6600;
-}
-.text-red-600 {
-    color: #cc0000;
-}
-.dark .text-green-600 {
-    color: #66ff66;
-}
-.dark .text-orange-500 {
-    color: #ff9933;
-}
-.dark .text-red-600 {
-    color: #ff6666;
-}
-
-/* Pagination simplifiée */
-nav.inline-flex a, nav.inline-flex span {
-    padding: 0.5rem 1rem;
-    border: 1px solid #ccc;
-    margin: 0 0.2rem;
-    border-radius: 8px;
-    font-weight: 500;
-    color: #333;
-    background-color: #fff;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-nav.inline-flex a:hover {
-    background-color: #0052cc;
-    color: #fff;
-}
-.dark nav.inline-flex a, .dark nav.inline-flex span {
-    border-color: #555;
-    color: #eee;
-    background-color: #222;
-}
-.dark nav.inline-flex a:hover {
-    background-color: #3399ff;
-    color: #000;
-}
-nav.inline-flex .bg-gray-100 {
-    background-color: #eee;
-    font-weight: 700;
-}
-.dark nav.inline-flex .bg-gray-600 {
-    background-color: #444;
-    color: #eee;
-}
-
-/* Utility classes */
-.max-w-4xl {
-    max-width: 56rem;
-}
-.mx-auto {
-    margin-left: auto;
-    margin-right: auto;
-}
-.space-y-12 > * + * {
-    margin-top: 3rem;
-}
-.mb-2 { margin-bottom: 0.5rem; }
-.mb-4 { margin-bottom: 1rem; }
-.p-4 { padding: 1rem; }
-.rounded-lg { border-radius: 0.75rem; }
-.shadow-lg {
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-}
-.flex {
-    display: flex;
-}
-.justify-between {
-    justify-content: space-between;
-}
-.items-center {
-    align-items: center;
-}
-.font-medium {
-    font-weight: 500;
-}
-.font-semibold {
-    font-weight: 600;
-}
-.text-lg {
-    font-size: 1.125rem;
-}
-.text-sm {
-    font-size: 0.875rem;
-}
-.text-gray-600 {
-    color: #666;
-}
-.text-gray-500 {
-    color: #999;
-}
-.text-gray-400 {
-    color: #bbb;
-}
-.text-gray-800 {
-    color: #222;
-}
-.mt-1 { margin-top: 0.25rem; }
-.mt-2 { margin-top: 0.5rem; }
-.mt-4 { margin-top: 1rem; }
-.mt-5 { margin-top: 1.25rem; }
-.space-y-1 > * + * {
-    margin-top: 0.25rem;
-}
-
-.online-indicator {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    background-color: #28a745; /* vert = en ligne */
-    border-radius: 50%;
-    margin-right: 6px;
 }
 
 </style>
 
-<div class="max-w-4xl mx-auto space-y-12">
+<div class="flex min-h-screen bg-gray-100 dark:bg-gray-900">
 
-    <section>
-        <h1 class="text-3xl font-bold mb-2">{% trans "Bienvenue," %} {{ request.user.username }} !</h1>
-        <p class="text-gray-600 dark:text-gray-400">{% trans "Gérez vos commandes, votre profil et contactez l'équipe." %}</p>
-    </section>
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-white dark:bg-gray-800 shadow-xl hidden md:flex flex-col">
+        <div class="p-6 border-b dark:border-gray-700">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-black-100">
+                {% trans "Tableau de bord" %}
+            </h2>
+        </div>
 
-    <section>
-        <h2 class="text-2xl font-semibold mb-4">{% trans "Mes Commandes et Paiements" %}</h2>
-        {% if page_obj %}
-            <div class="space-y-6">
-                {% for invoice in page_obj %}
-                    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 transition">
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-lg font-medium">{% trans "Facture #" %}{{ invoice.id }}</h3>
-                             {% if invoice.payment_status == 'pending' and invoice.has_cancelled %}
-                                <span class="font-semibold text-red-600">{% trans "Réservation annulée" %}</span>
-                            {% else %}
-                                <span class="font-semibold 
-                                    {% if invoice.payment_status == 'paid' %}text-green-600
-                                    {% elif invoice.payment_status == 'pending' %}text-orange-500
-                                    {% else %}text-red-600{% endif %}">
-                                    {{ invoice.get_payment_status_display }}
-                                </span>
-                            {% endif %}
-                        </div>
-                        <p>{% trans "Montant :" %} <strong>{{ invoice.total_amount|floatformat:2 }} €</strong></p>
+        <nav class="p-4 space-y-2 flex-1">
+            <a href="{% url 'accounts:user_dashboard' %}"
+               class="block px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold shadow">
+                {% trans "Accueil" %}
+            </a>
 
-                        {% if invoice.coupon_used %}
-                        {% blocktrans with code=invoice.coupon_used.code amount=invoice.discount_amount|floatformat:2 %}
-                            Coupon : <strong>{{ code }}</strong> ({{ amount }} € de réduction)
-                        {% endblocktrans %}
-                        {% endif %}
+            <a href="#reservations"
+                class="block px-4 py-2 rounded-lg text-black dark:text-black font-bold hover:bg-gray-200 dark:hover:bg-gray-700">
+                 {% trans "Mes réservations" %}
+            </a>
 
-                        <p class="text-sm text-gray-500">{% trans "Date :" %} {{ invoice.created_at|date:"d M Y H:i" }}</p>
 
-                        <div class="mt-2">
-                            <h4 class="font-semibold">{% trans "Réservations" %}</h4>
-                            {% if invoice.reservations_linked.all %}
-                                <ul class="mt-1 space-y-1">
-                                    {% for reservation in invoice.reservations_linked.all %}
-                                        <li class="border rounded p-2 bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
-                                            <div>
-                                                <div>{{ reservation.photobooth.name }}</div>
-                                                <div class="text-sm">{% trans "Du" %} {{ reservation.start_date|date:"d/m/Y H:i" }} {% trans "au" %} {{ reservation.end_date|date:"d/m/Y H:i" }}</div>
-                                                <div class="text-sm">
-                                                    {% trans "Statut :" %}
-                                                    <span class="font-semibold 
-                                                        {% if reservation.status == 'confirmed' %}text-green-600
-                                                        {% elif reservation.status == 'pending' %}text-orange-500
-                                                        {% else %}text-red-600{% endif %}">
-                                                        {{ reservation.get_status_display }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            {# Ajout du bouton de téléchargement pour chaque réservation #}
-                                            {% if reservation.status == 'confirmed' %}
-                                            <a href="{% url 'accounts:generate_invoice' reservation.id %}" 
-                                               class="inline-flex items-center px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition"
-                                               target="_blank" rel="noopener noreferrer">
-                                                {% trans "Télécharger la facture" %}
-                                            </a>
-                                            </a> <!-- Annuler la réservation --> 
-                                            <form method="post" action="{% url 'reservation:cancel_reservation' reservation.id %}"> 
-                                                {% csrf_token %} 
-                                                <button type="submit" class="bg-red-600 text-white px-3 py-1 rounded text-sm"> Annuler la réservation </button> 
-                                            </form>
+            <a href="#profile"
+               class="block px-4 py-2 rounded-lg text-black dark:text-black font-bold hover:bg-gray-200 dark:hover:bg-gray-700">
+                {% trans "Modifier mon profil" %}
+            </a>
 
-                                        </div>
-                                        {% endif %}
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            {% else %}
-                                <p class="text-sm text-gray-500">{% trans "Aucune réservation liée." %}</p>
-                            {% endif %}
-                        </div>
-                    </div>
+            <a href="#notifications"
+               class="block px-4 py-2 rounded-lg text-black dark:text-black font-bold hover:bg-gray-200 dark:hover:bg-gray-700">
+                {% trans "Notifications" %}
+            </a>
+
+            <a href="{% url 'accounts:change_password' %}"
+                class="block px-4 py-2 rounded-lg text-black dark:text-black font-bold hover:bg-gray-200 dark:hover:bg-gray-700">
+                {% trans "Changer mon mot de passe" %}
+            </a>
+
+            <a href="{% url 'accounts:contact_admin' %}"
+               class="block px-4 py-2 rounded-lg text-black dark:text-black font-bold hover:bg-gray-200 dark:hover:bg-gray-700">
+                {% trans "Contacter l'administration" %}
+            </a>
+        </nav>
+
+        <div class="p-4 border-t dark:border-black-700 text-center">
+            <p class="text-xs text-black-500 dark:text-black-400">
+                © IdealBooth — Dashboard
+            </p>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 p-6 space-y-12">
+
+        <!-- HEADER -->
+        <section class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100">
+                    {% trans "Bienvenue," %} {{ request.user.username }} 👋
+                </h1>
+                <p class="text-gray-600 dark:text-gray-400">
+                    {% trans "Voici un aperçu complet de votre compte." %}
+                </p>
+            </div>
+
+            <img src="https://ui-avatars.com/api/?name={{ request.user.username }}&background=4f46e5&color=fff"
+                 class="w-12 h-12 rounded-full shadow" alt="avatar">
+        </section>
+
+        <!-- STATS CARDS -->
+        <section class="grid md:grid-cols-3 lg:grid-cols-6 gap-6">
+
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                <p class="text-black-700 dark:text-black-500 text-sm">{% trans "Réservations totales" %}</p>
+                <h3 class="text-3xl font-bold text-Bleu-800 Bleu:text-Bleu-100">
+                    {{ reservations|length }}
+                </h3>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                <p class="text-black-700 dark:text-black-500 text-sm">{% trans "Confirmées" %}</p>
+                <h3 class="text-3xl font-bold text-green-500">
+                    {{ confirmed_count }}
+                </h3>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                <p class="text-black-700 dark:text-black-500 text-sm">{% trans "En attente" %}</p>
+                <h3 class="text-3xl font-bold text-yellow-500">
+                    {{ pending_count }}
+               </h3>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                <p class="text-black-700 dark:text-black-500 text-sm">{% trans "Annulées" %}</p>
+                <h3 class="text-3xl font-bold text-red-500">
+                    {{ cancelled_count }}
+                </h3>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                <p class="text-black-700 dark:text-black-500 text-sm">{% trans "Notifications non lues" %}</p>
+                <h3 class="text-3xl font-bold text-red-500">
+                    {{ notifications|length }}
+                </h3>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                <p class="text-black-700 dark:text-black-500 text-sm">{% trans "Compte créé le" %}</p>
+                <h3 class="text-xl font-semibold text-black-800 dark:text-black-100">
+                    {{ request.user.date_joined|date:"d/m/Y" }}
+                </h3>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                <p class="text-black-700 dark:text-black-500 text-sm">{% trans "Dernière connexion" %}</p>
+                <h3 class="text-xl font-semibold text-black-800 dark:text-black-100">
+                    {{ request.user.last_login|date:"d/m/Y H:i" }}
+                </h3>
+            </div>
+
+        </section>
+
+        <!-- NOTIFICATIONS -->
+        <section id="notifications" class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6">
+            <h2 class="text-xl font-semibold mb-4">{% trans "Notifications" %}</h2>
+
+            <ul class="space-y-3 max-h-64 overflow-y-auto">
+                {% for notif in notifications %}
+                    <li class="relative p-3 rounded-lg bg-gray-50 dark:bg-gray-700 
+                            {% if not notif.is_read %}font-semibold{% endif %}">
+
+                        <!-- Bouton supprimer -->
+                        <a href="{% url 'accounts:delete_notification' notif.id %}"
+                        class="absolute top-2 right-2 text-red-500 hover:text-red-700 text-xl font-bold">
+                            &times;
+                        </a>
+
+                        <p>{{ notif.message }}</p>
+                        <small class="text-gray-500 dark:text-gray-400">
+                            {{ notif.created_at|date:"d/m/Y H:i" }}
+                        </small>
+                    </li>
+                {% empty %}
+                    <p class="text-gray-500 dark:text-gray-400 text-sm">
+                        {% trans "Aucune notification." %}
+                    </p>
                 {% endfor %}
-            </div>
+            </ul>
+        </section>
 
-            <div class="mt-4 flex justify-center">
-                <nav class="inline-flex rounded-md shadow-sm">
-                    {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 border rounded-l bg-white dark:bg-gray-700">{% trans "Précédent" %}</a>
-                    {% endif %}
-                    <span class="px-3 py-1 border-t border-b bg-gray-100 dark:bg-gray-600">{{ page_obj.number }}</span>
-                    {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 border rounded-r bg-white dark:bg-gray-700">{% trans "Suivant" %}</a>
-                    {% endif %}
-                </nav>
-            </div>
-        {% else %}
-            <p class="text-gray-500">{% trans "Aucune commande trouvée." %}</p>
-        {% endif %}
-    </section>
+        <!-- RÉSERVATIONS -->
+        <section id="reservations" class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6">
+            <h2 class="text-xl font-semibold mb-4">{% trans "Vos réservations" %}</h2>
 
-    <section>
-    <h2 class="text-2xl font-semibold mb-4">Notifications</h2>
-    <ul class="space-y-4">
-        {% for notif in request.user.notifications.all %}
-            <li class="p-4 rounded-lg shadow-md bg-white dark:bg-gray-800 {% if not notif.is_read %}font-bold{% endif %}">
-                <div class="flex justify-between items-center">
-                    <p>{{ notif.message }}</p>
-                    <small class="text-sm text-gray-500 dark:text-gray-400">
-                        {{ notif.created_at|date:"d/m/Y H:i" }}
-                    </small>
-                </div>
-                {% if not notif.is_read %}
-                    <span class="text-red-600 text-sm mt-1 inline-block">Non lue</span>
-                {% endif %}
-            </li>
+            <table class="w-full text-left text-sm">
+    <thead>
+        <tr class="border-b dark:border-gray-700">
+            <th class="py-2">{% trans "Début" %}</th>
+            <th class="py-2">{% trans "Fin" %}</th>
+            <th class="py-2">{% trans "Photobooth" %}</th>
+            <th class="py-2">{% trans "Statut" %}</th>
+            <th class="py-2">{% trans "Facture" %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in reservations %}
+            <tr class="border-b dark:border-gray-700">
+                <td class="py-2">{{ r.start_date|date:"d/m/Y H:i" }}</td>
+                <td class="py-2">{{ r.end_date|date:"d/m/Y H:i" }}</td>
+                <td class="py-2">{{ r.photobooth.name }}</td>
+                <td class="py-2">
+                    <span class="px-2 py-1 rounded text-white
+                        {% if r.status == 'confirmed' %} bg-green-600
+                        {% elif r.status == 'pending' %} bg-yellow-500
+                        {% else %} bg-red-600 {% endif %}">
+                        {{ r.get_status_display }}
+                    </span>
+                </td>
+                <td class="py-2">
+                    {% if r.invoice and r.status == 'confirmed' %}
+                        <a href="{% url 'reservation:invoice_pdf' r.invoice.id %}"
+                           class="px-3 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition text-xs font-semibold">
+                            ⬇️ {% trans "Télécharger" %}
+                        </a>
+                    {% else %}
+                        <span class="text-gray-400 text-xs">—</span>
+                    {% endif %}
+                </td>
+            </tr>
         {% empty %}
-            <li class="text-gray-500 dark:text-gray-400">Aucune notification.</li>
+            <tr>
+                <td colspan="5" class="py-4 text-gray-500 dark:text-gray-400 text-center">
+                    {% trans "Aucune réservation pour le moment." %}
+                </td>
+            </tr>
         {% endfor %}
-    </ul>
+    </tbody>
+</table>
+        </section>
+
+       <!-- MODIFIER PROFIL -->
+<section id="profile" class="bg-white dark:bg-gray-900 shadow-lg rounded-xl p-8">
+    <h2 class="text-2xl font-bold mb-6 text-black dark:text-black">
+        {% trans "Modifier mon profil" %}
+    </h2>
+
+    <form action="{% url 'accounts:edit_profile' %}" method="post"
+          class="grid md:grid-cols-2 gap-6">
+        {% csrf_token %}
+
+        <div>
+            <label class="block text-sm font-semibold mb-2 text-black dark:text-black">
+                {% trans "Nom d'utilisateur" %}
+            </label>
+            <input type="text" name="username" value="{{ request.user.username }}"
+                   class="w-full px-4 py-3 rounded-lg 
+                          bg-gray-50 dark:bg-white 
+                          border border-gray-300 dark:border-gray-500 
+                          text-black dark:text-white
+                          focus:ring-2 focus:ring-indigo-700 transition">
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold mb-2 text-black dark:text-black">
+                {% trans "Courriel" %}
+            </label>
+            <input type="email" name="email" value="{{ request.user.email }}"
+                   class="w-full px-4 py-3 rounded-lg 
+                          bg-gray-50 dark:bg-white
+                          border border-gray-300 dark:border-gray-500 
+                          text-black dark:text-white
+                          focus:ring-2 focus:ring-indigo-700 transition">
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold mb-2 text-black dark:text-black">
+                {% trans "Prénom" %}
+            </label>
+            <input type="text" name="first_name" value="{{ request.user.first_name }}"
+                   class="w-full px-4 py-3 rounded-lg 
+                          bg-gray-50 dark:bg-white
+                          border border-gray-300 dark:border-gray-500 
+                          text-black dark:text-white
+                          focus:ring-2 focus:ring-indigo-700 transition">
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold mb-2 text-black dark:text-black">
+                {% trans "Nom" %}
+            </label>
+            <input type="text" name="last_name" value="{{ request.user.last_name }}"
+                   class="w-full px-4 py-3 rounded-lg 
+                          bg-gray-50 dark:bg-white
+                          border border-gray-300 dark:border-gray-500 
+                          text-black dark:text-white
+                          focus:ring-2 focus:ring-indigo-700 transition">
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold mb-2 text-black dark:text-black">
+                {% trans "Téléphone" %}
+            </label>
+            <input type="text" name="phone_number" value="{{ request.user.phone_number }}"
+                   class="w-full px-4 py-3 rounded-lg 
+                          bg-gray-50 dark:bg-white
+                          border border-gray-300 dark:border-gray-500 
+                          text-black dark:text-white
+                          focus:ring-2 focus:ring-indigo-700 transition">
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold mb-2 text-black dark:text-black">
+                {% trans "Adresse" %}
+            </label>
+            <input type="text" name="address" value="{{ request.user.address }}"
+                   class="w-full px-4 py-3 rounded-lg 
+                          bg-gray-50 dark:bg-white 
+                          border border-gray-300 dark:border-gray-500 
+                          text-black dark:text-white
+                          focus:ring-2 focus:ring-indigo-700 transition">
+        </div>
+
+        <div class="md:col-span-2 flex justify-end mt-4">
+            <button type="submit"
+                    class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 
+                           text-white font-semibold rounded-lg shadow transition">
+                {% trans "Enregistrer les modifications" %}
+            </button>
+        </div>
+    </form>
 </section>
 
-
-    <section id="profile">
-        <h2 class="text-2xl font-semibold mb-4">{% trans "Modifier mon profil" %}</h2>
-        <form action="{% url 'accounts:edit_profile' %}" method="post" class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 space-y-4 transition">
-           {% csrf_token %}
-
-            <div>
-                <label for="username" class="block text-sm font-medium">{% trans "Nom d'utilisateur" %}</label>
-                <input type="text" id="username" name="username" value="{{ request.user.username }}" required class="mt-1 w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600">
-            </div>
-
-            <div>
-                <label for="email" class="block text-sm font-medium">{% trans "Email" %}</label>
-                <input type="email" id="email" name="email" value="{{ request.user.email }}" required class="mt-1 w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600">
-            </div>
-
-            <div>
-                <label for="first_name" class="block text-sm font-medium">{% trans "Prénom" %}</label>
-                <input type="text" id="first_name" name="first_name" value="{{ request.user.first_name }}" class="mt-1 w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600">
-            </div>
-
-            <div>
-                <label for="last_name" class="block text-sm font-medium">{% trans "Nom" %}</label>
-                <input type="text" id="last_name" name="last_name" value="{{ request.user.last_name }}" class="mt-1 w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600">
-            </div>
-
-            <div>
-                <label for="phone" class="block text-sm font-medium">{% trans "Téléphone" %}</label>
-                <input type="text" id="phone_number" name="phone_number" value="{{ request.user.phone_number }}" ... >
-
-            </div>
-
-            <div>
-                <label for="address" class="block text-sm font-medium">{% trans "Adresse" %}</label>
-                <input type="text" id="address" name="address" value="{{ request.user.profile.address }}" class="mt-1 w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600">
-            </div>
-
-            <div class="flex items-center justify-between mt-4">
-            <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded">
-                {% trans "Mettre à jour" %}
-            </button>
-            <a href="{% url 'accounts:change_password' %}" class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded">
-                {% trans "Changer le mot de passe" %}
-            </a>
-        </div>
-        </form>
-        <div class="mt-6 border-t pt-4 text-right">
-            {% if user.profile.deletion_date %}
-                <p class="text-sm text-gray-600 mb-2">
-                    Votre compte est programmé pour suppression le 
-                    <strong>{{ user.profile.deletion_date|date:"d/m/Y H:i" }}</strong>.
-                </p>
-                <a href="{% url 'accounts:cancel_account_deletion' %}" 
-                class="text-yellow-600 hover:underline text-sm">
-                    Annuler la suppression du compte
-                </a>
-            {% else %}
-                <a href="{% url 'accounts:request_account_deletion' %}" 
-                class="text-red-600 hover:underline text-sm"
-                onclick="return confirm('Voulez-vous vraiment programmer la suppression de votre compte ?');">
-                    Supprimer mon compte (dans 30 jours)
-                </a>
-            {% endif %}
-        </div>
-    </section>
-
-    <section id="contact">
-        <h2 class="text-2xl font-semibold mb-4">{% trans "Envoyer un message à l'admin" %}</h2>
-        <form action="{% url 'accounts:contact_admin' %}" method="post" class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 space-y-4 transition">
-            {% csrf_token %}
-            <div>
-                <label for="subject" class="block text-sm font-medium">{% trans "Sujet" %}</label>
-                <input type="text" id="subject" name="subject" required class="mt-1 w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600">
-            </div>
-            <div>
-                <label for="message" class="block text-sm font-medium">{% trans "Message" %}</label>
-                <textarea id="message" name="message" rows="5" required class="mt-1 w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600"></textarea>
-            </div>
-            <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded">
-                {% trans "Envoyer" %}
-            </button>
-        </form>
-    </section>
+    </main>
 
 </div>
+
 {% endblock %}

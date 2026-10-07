@@ -1,31 +1,142 @@
-<!-- accounts/templates/users/profile.html -->
 {% extends 'base.html' %}
 {% load i18n %}
+{% load widget_tweaks %}
 
-{% block title %}Mon Profil{% endblock %}
+{% block title %}{% trans "Mon Profil" %}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="text-center mb-4">{% trans "Mon Profil" %}</h2>
+<div class="max-w-3xl mx-auto mt-10 px-4">
 
-    <div class="card p-4">
-        <p><strong>{% trans "Nom d'utilisateur :" %}</strong> {{ request.user.username }}</p>
-        <p><strong>{% trans "Nom :" %}</strong> {{ request.user.first_name }}</p>
-        <p><strong>{% trans "Prénom :" %}</strong> {{ request.user.last_name }}</p>
-        <p><strong>{% trans "Email :" %}</strong> {{ request.user.email }}</p>
-        <p><strong>{% trans "Téléphone :" %}</strong> {{ request.user.phone_number }}</p>
+    <h2 class="text-3xl font-bold text-center mb-8">
+        {% trans "Mon Profil" %}
+    </h2>
+
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 space-y-4">
+
+        <!-- Type de compte -->
+        <p>
+            <span class="font-semibold text-gray-700 dark:text-gray-300">
+                {% trans "Type de compte :" %}
+            </span>
+            {% if request.user.account_type == "company" %}
+                <span class="text-blue-600 font-semibold">{% trans "Entreprise" %}</span>
+            {% else %}
+                <span class="text-green-600 font-semibold">{% trans "Utilisateur" %}</span>
+            {% endif %}
+        </p>
+
+        <!-- Infos utilisateur -->
+        <p>
+            <span class="font-semibold text-gray-700 dark:text-gray-300">
+                {% trans "Nom d'utilisateur :" %}
+            </span>
+            {{ request.user.username }}
+        </p>
+
+        <p>
+            <span class="font-semibold text-gray-700 dark:text-gray-300">
+                {% trans "Nom :" %}
+            </span>
+            {{ request.user.first_name }}
+        </p>
+
+        <p>
+            <span class="font-semibold text-gray-700 dark:text-gray-300">
+                {% trans "Prénom :" %}
+            </span>
+            {{ request.user.last_name }}
+        </p>
+
+        <p>
+            <span class="font-semibold text-gray-700 dark:text-gray-300">
+                {% trans "Email :" %}
+            </span>
+            {{ request.user.email }}
+        </p>
+
+        <p>
+            <span class="font-semibold text-gray-700 dark:text-gray-300">
+                {% trans "Téléphone :" %}
+            </span>
+            {{ request.user.phone_number }}
+        </p>
+
         {% if request.user.profile_picture %}
-            <p><img src="{{ request.user.profile_picture.url }}" class="img-thumbnail" width="150"></p>
-        {% endif %}
-        {% if request.user.address %}
-            <p><strong>Adresse :</strong> {{ request.user.address }}</p>
+            <div class="pt-2">
+                <img src="{{ request.user.profile_picture.url }}"
+                     alt="Photo de profil"
+                     class="w-32 h-32 object-cover rounded-lg shadow-md border border-gray-300 dark:border-gray-700">
+            </div>
         {% endif %}
 
-        <div class="d-grid gap-2 mt-4">
-            <a href="{% url 'edit_profile' %}" class="btn btn-primary">{% trans "Modifier les informations" %}</a>
-            <a href="{% url 'password_change' %}" class="btn btn-outline-secondary">{% trans "Changer le mot de passe" %}</a>
+        {% if request.user.address %}
+            <p>
+                <span class="font-semibold text-gray-700 dark:text-gray-300">
+                    {% trans "Adresse :" %}
+                </span>
+                {{ request.user.address }}
+            </p>
+        {% endif %}
+        
+        {% if request.user.heure_livraison %}
+            <p>
+                <span class="font-semibold text-gray-700 dark:text-gray-300">
+                    {% trans "Heure de livraison préférée :" %}
+                </span>
+                {{ request.user.heure_livraison }}
+            </p>
+        {% endif %}
+
+        <!-- Infos entreprise -->
+        {% if request.user.account_type == "company" %}
+            <hr class="my-4 border-gray-300 dark:border-gray-700">
+
+            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+                {% trans "Informations Entreprise" %}
+            </h3>
+
+            <p>
+                <span class="font-semibold text-gray-700 dark:text-gray-300">
+                    {% trans "Nom de l'entreprise :" %}
+                </span>
+                {{ request.user.company_name }}
+            </p>
+
+            {% if request.user.company_vat_number %}
+                <p>
+                    <span class="font-semibold text-gray-700 dark:text-gray-300">
+                        {% trans "Numéro TVA :" %}
+                    </span>
+                    {{ request.user.company_vat_number }}
+                </p>
+            {% endif %}
+
+            {% if request.user.company_address %}
+                <p>
+                    <span class="font-semibold text-gray-700 dark:text-gray-300">
+                        {% trans "Adresse professionnelle :" %}
+                    </span>
+                    {{ request.user.company_address }}
+                </p>
+            {% endif %}
+        {% endif %}
+
+        <!-- Boutons -->
+        <div class="flex flex-col sm:flex-row gap-3 pt-4">
+
+            <a href="{% url 'edit_profile' %}"
+               class="w-full text-center px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition">
+                {% trans "Modifier les informations" %}
+            </a>
+
+            <a href="{% url 'password_change' %}"
+               class="w-full text-center px-4 py-2 rounded-lg border border-gray-400 dark:border-gray-600
+                      text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                {% trans "Changer le mot de passe" %}
+            </a>
+
         </div>
+
     </div>
 </div>
 {% endblock %}
-
